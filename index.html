@@ -2579,11 +2579,11 @@ const medalTd=(h,k)=>k<3?`<td style="background:color-mix(in srgb,${MEDAL[k]} 16
 const yrTd=(y,first)=>`<td><b>${first?`${y} <span class="tag">so far</span>`:y}</b></td>`;
 function renderEloHonours(){
   const H=eloHonours(S.disc), d=S.disc.toLowerCase();
-  $("#elo-hon-sub").textContent=`${S.disc} Elo, from 1998/99 when the match records begin – so these are modern-era honours only. Players need ${D().elo.provisional}+ rated matches.`;
+  $("#elo-hon-sub").innerHTML=`${S.disc} Elo, from 1998/99 when the match records begin – so these are modern-era honours only. Players need ${D().elo.provisional}+ rated matches. <b>Active players only</b>: the year-end lists include only players who played at least one match that year.`;
   let h=`<div class="recs">`;
   h+=miniCard("Highest peak ratings","All time (from 1998/99).",["Player","r:Peak","Reached at"],H.peaks.slice(0,12).map(o=>trow([TIP(o.n),[o.pk],`<span class="muted">${esc(o.at)}</span>`])));
-  h+=miniCard("Top of the Elo list at year end","Most years finishing as the highest-rated active player.",["Player","r:Years","Which"],Object.entries(H.cnt).sort((a,b)=>b[1]-a[1]).map(([n,k])=>trow([TIP(n),[k],`<span class="muted" style="font-size:13px">${H.ye.filter(o=>o.n===n).map(o=>o.y).join(", ")}</span>`])));
-  h+=miniCard("Year by year","The five highest-rated active players at the end of each year.",["Year","1st","2nd","3rd","4th","5th"],H.ye.slice().reverse().map((o,i)=>`<tr>${yrTd(o.y,!i)}${[0,1,2,3,4].map(k=>medalTd(o.top[k]?`<span style="white-space:nowrap">${TIP(o.top[k].n)} <span class="muted">${o.top[k].r}</span></span>`:"",k)).join("")}</tr>`),false,false).replace('<div class="tcard">','<div class="tcard" style="grid-column:1/-1">');
+  h+=miniCard("Top of the Elo list at year end","Most years finishing as the highest-rated player. Active players only (played that year).",["Player","r:Years","Which"],Object.entries(H.cnt).sort((a,b)=>b[1]-a[1]).map(([n,k])=>trow([TIP(n),[k],`<span class="muted" style="font-size:13px">${H.ye.filter(o=>o.n===n).map(o=>o.y).join(", ")}</span>`])));
+  h+=miniCard("Year by year","The five highest-rated players at the end of each year. Active players only: must have played that year.",["Year","1st","2nd","3rd","4th","5th"],H.ye.slice().reverse().map((o,i)=>`<tr>${yrTd(o.y,!i)}${[0,1,2,3,4].map(k=>medalTd(o.top[k]?`<span style="white-space:nowrap">${TIP(o.top[k].n)} <span class="muted">${o.top[k].r}</span></span>`:"",k)).join("")}</tr>`),false,false).replace('<div class="tcard">','<div class="tcard" style="grid-column:1/-1">');
   h+=eloCombinedCards();
   $("#elo-hon").innerHTML=h+`</div>`;
 }
@@ -2610,13 +2610,13 @@ function eloCombined(){
 }
 function eloCombinedCards(){
   const C=eloCombined(), last=C.rows.length-1, tip=p=>`<span style="white-space:nowrap">${TIP(p.n)} <span class="muted" title="Singles ${p.s} + Doubles ${p.d}">${p.t}</span></span>`;
-  let h=`<details class="xsec" open style="grid-column:1/-1;margin-top:6px"><summary>Combined singles + doubles year-end leaderboard</summary><p class="sub" style="margin:10px 2px">Each player's singles Elo plus their doubles Elo at the end of the year (hover for the split). Players need ${D().elo.provisional}+ rated matches in both and must have played that year. Shown for singles and doubles together, whichever is selected above.</p><div class="recs">`;
+  let h=`<details class="xsec" open style="grid-column:1/-1;margin-top:6px"><summary>Combined singles + doubles year-end leaderboard</summary><p class="sub" style="margin:10px 2px">Each player's singles Elo plus their doubles Elo at the end of the year (hover for the split). Players need ${D().elo.provisional}+ rated matches in both. <b>Active players only</b>: they must have played in at least one discipline that year. Shown for singles and doubles together, whichever is selected above.</p><div class="recs">`;
   h+=miniCard("Highest combined year-ends","Best single year-end totals (each player once).",["Player","r:Total","Year","r:S / D"],
     (()=>{const seen=new Set(), out=[]; for(const p of C.best){ if(seen.has(p.n)) continue; seen.add(p.n); out.push(p); if(out.length>=12) break; }
       return out.map(p=>trow([TIP(p.n),[p.t],String(p.y),[`<span class="muted" style="white-space:nowrap">${p.s} / ${p.d}</span>`]]));})());
-  h+=miniCard("Top of the combined list","Most years finishing as the highest combined player.",["Player","r:Years","Which"],
+  h+=miniCard("Top of the combined list","Most years finishing as the highest combined player (active players only).",["Player","r:Years","Which"],
     Object.entries(C.cnt).sort((a,b)=>b[1]-a[1]).map(([n,k])=>trow([TIP(n),[k],`<span class="muted" style="font-size:13px">${C.rows.filter(o=>o.top[0].n===n).map(o=>o.y).join(", ")}</span>`])));
-  h+=miniCard("Combined year by year","The five highest combined totals at the end of each year.",["Year","1st","2nd","3rd","4th","5th"],
+  h+=miniCard("Combined year by year","The five highest combined totals at the end of each year. Active players only.",["Year","1st","2nd","3rd","4th","5th"],
     C.rows.slice().reverse().map((o,i)=>`<tr>${yrTd(o.y,!i)}${[0,1,2,3,4].map(k=>medalTd(o.top[k]?tip(o.top[k]):"",k)).join("")}</tr>`),false,false).replace('<div class="tcard">','<div class="tcard" style="grid-column:1/-1">');
   return h+`</div></details>`;
 }
