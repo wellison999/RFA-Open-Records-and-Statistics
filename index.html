@@ -210,7 +210,7 @@ dialog.tdlg::backdrop{background:rgba(0,0,0,.45)}
 .pbar{display:inline-block;width:70px;height:8px;border-radius:4px;background:var(--soft);border:1px solid var(--rule);vertical-align:middle;overflow:hidden}.pbar i{display:block;height:100%}
 table.cmp td{padding:6px 10px}table.cmp .cmpl{text-align:center;color:var(--muted);font-size:13.5px}
 table.cmp .cmpv{font-weight:700;font-size:16px}table.cmp .cw{color:var(--up)}table.cmp .cw::after{content:" ●";font-size:10px;vertical-align:2px}table.cmp td.r.cw::after{content:""}table.cmp td.r.cw::before{content:"● ";font-size:10px;vertical-align:2px}
-table.cmp .cl{color:var(--muted);font-weight:500}
+table.cmp .cl{color:var(--muted);font-weight:500}table.cmp .cn.w{color:var(--up)}table.cmp .cn.l{color:var(--muted);font-weight:500}
 .legend-row{display:flex;gap:6px;margin:4px 0}
 [data-pview][aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
 .top .seg.off{visibility:hidden}
@@ -294,6 +294,10 @@ a{color:inherit}
 .westbox .we-bar .we-a{background:var(--accent)}.westbox .we-bar .we-b{background:#8A97A5}
 .westbox .we-l{display:flex;justify-content:space-between;font-size:13px;margin-top:6px;gap:8px}
 .westbox .we-d{font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.45}
+.westbox .we-pick{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:end;margin-top:10px}
+.westbox .we-pick label{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:14px}
+.westbox .we-pick input{flex:1;min-width:140px}.westbox .we-vs{padding-bottom:8px;color:var(--muted)}
+@media(max-width:640px){.westbox .we-pick{grid-template-columns:1fr}.westbox .we-vs{display:none}}
 </style>
 </head>
 <body data-disc="Singles">
@@ -1159,7 +1163,7 @@ function matchRow(m,p){
 }
 
 /* ---------------- head to head ---------------- */
-/* ---------------- win estimator (singles, from Elo) ---------------- */
+/* ---------------- win estimator (from Elo) ---------------- */
 const WE={
   race(q,N){ let t=0,c=1; for(let k=0;k<N;k++){ if(k>0) c=c*(N-1+k)/k; t+=c*Math.pow(q,N)*Math.pow(1-q,k);} return t; },   // chance of reaching N points first if every point is won with chance q
   best3(g){ return g*g*(3-2*g); },
@@ -1169,24 +1173,46 @@ const WE={
     return {m15, g15, m11:WE.best3(g11), g11, q};
   }
 };
-function winEstHTML(a,b){
-  if(S.disc!=="Singles") return "";
-  const E=D().elo, ea=E.players[a], eb=E.players[b];
-  if(!ea||!eb) return `<details class="westbox"><summary><b>Win estimator</b></summary><p class="sub">Needs an Elo rating for both players.</p></details>`;
-  const r=WE.est(ea.now,eb.now), pc=v=>Math.round(v*100);
-  const prov=[ea.m<E.provisional?a:null,eb.m<E.provisional?b:null].filter(Boolean);
+S.weOpen=S.weOpen||false; S.wePart=S.wePart||{key:"",pa:"",pb:""};
+function weBlock(la,lb,ra,rb,prov,vb){ vb=vb||"wins";
+  const r=WE.est(ra,rb), pc=v=>Math.round(v*100);
   const fmt=(title,m,g)=>{ const pa=pc(m), pb=100-pa;
     const s20=g*g, s21=2*g*g*(1-g), t20=(1-g)*(1-g), t21=2*(1-g)*(1-g)*g;
     return `<div class="we-f"><b class="fmt">${title}</b>
-      <div class="we-bar" role="img" aria-label="${esc(a)} ${pa}%, ${esc(b)} ${pb}%"><span class="we-a" style="flex:${pa}">${pa}%</span><span class="we-b" style="flex:${pb}">${pb}%</span></div>
-      <div class="we-l"><span>${esc(a)}</span><span>${esc(b)}</span></div>
+      <div class="we-bar" role="img" aria-label="${esc(la)} ${pa}%, ${esc(lb)} ${pb}%"><span class="we-a" style="flex:${pa}">${pa}%</span><span class="we-b" style="flex:${pb}">${pb}%</span></div>
+      <div class="we-l"><span>${esc(la)}</span><span>${esc(lb)}</span></div>
       <div class="we-d">Chance of winning a single game: <b>${pc(g)}%</b> / ${100-pc(g)}%.<br>
-      Most likely results: ${esc(a)} wins 2–0 <b>${pc(s20)}%</b>, 2–1 <b>${pc(s21)}%</b>; ${esc(b)} wins 2–0 <b>${pc(t20)}%</b>, 2–1 <b>${pc(t21)}%</b>.</div></div>`; };
-  return `<details class="westbox"><summary><b>Win estimator</b> <span class="muted" style="font-size:12px;font-weight:400">(unofficial, from Elo – tap to open)</span></summary>
-    <p class="sub" style="margin:8px 0 0">${esc(a)} ${Math.round(ea.now)} v ${esc(b)} ${Math.round(eb.now)} – a ${Math.abs(Math.round(ea.now-eb.now))}-point gap in Elo. Best of three games.</p>
+      Most likely results: ${esc(la)} ${vb} 2–0 <b>${pc(s20)}%</b>, 2–1 <b>${pc(s21)}%</b>; ${esc(lb)} ${vb} 2–0 <b>${pc(t20)}%</b>, 2–1 <b>${pc(t21)}%</b>.</div></div>`; };
+  return `<p class="sub" style="margin:8px 0 0">${esc(la)} ${Math.round(ra)} v ${esc(lb)} ${Math.round(rb)} – a ${Math.abs(Math.round(ra-rb))}-point gap in Elo. Best of three games.</p>
     <div class="we-grid">${fmt("Best of 3 to 15",r.m15,r.g15)}${fmt("Best of 3 to 11",r.m11,r.g11)}</div>
-    ${prov.length?`<p class="caveat" style="margin:8px 0 0">${prov.map(esc).join(" and ")} ${prov.length>1?"have":"has"} played fewer than ${E.provisional} rated matches, so the rating is provisional and the estimate is rough.</p>`:""}
-    <p class="we-d">How it works: Elo gives the chance of winning a match; that is turned into a chance of winning each game, and then re-worked for games to 11 (shorter games are a little more of a lottery, so the favourite's chance dips slightly). Ratings are built from past results in mixed formats and take no account of current form, injuries or conditions – treat it as a guide, not a prediction.</p></details>`;
+    ${prov.length?`<p class="caveat" style="margin:8px 0 0">${prov.map(esc).join(" and ")} ${prov.length>1?"have":"has"} played fewer than ${D().elo.provisional} rated matches, so the rating is provisional and the estimate is rough.</p>`:""}`;
+}
+const WE_NOTE=`<p class="we-d">How it works: Elo gives the chance of winning a match; that is turned into a chance of winning each game, and then re-worked for games to 11 (shorter games are a little more of a lottery, so the favourite's chance dips slightly). Ratings are built from past results in mixed formats and take no account of current form, injuries or conditions – treat it as a guide, not a prediction.</p>`;
+function weDoubles(a,b){
+  const E=D().elo, P=S.wePart, out=$("#we-out"); if(!out) return;
+  const names=[a,P.pa,b,P.pb];
+  if(!P.pa||!P.pb){ out.innerHTML=`<p class="sub" style="margin:8px 0 0">Choose ${!P.pa?esc(a)+"'s partner":""}${!P.pa&&!P.pb?" and ":""}${!P.pb?esc(b)+"'s partner":""} above.</p>`; return; }
+  if(new Set(names).size<4){ out.innerHTML=`<p class="caveat" style="margin:8px 0 0">Pick four different players.</p>`; return; }
+  const miss=names.filter(n=>!E.players[n]);
+  if(miss.length){ out.innerHTML=`<p class="caveat" style="margin:8px 0 0">No doubles Elo rating for ${miss.map(esc).join(", ")}.</p>`; return; }
+  const rat=n=>E.players[n].now, prov=names.filter(n=>E.players[n].m<E.provisional);
+  out.innerHTML=weBlock(a+" & "+P.pa,b+" & "+P.pb,(rat(a)+rat(P.pa))/2,(rat(b)+rat(P.pb))/2,prov,"win");
+}
+function winEstHTML(a,b){
+  const op=S.weOpen?" open":"";
+  if(S.disc==="Doubles"){
+    const key=a+"|"+b; if(S.wePart.key!==key) S.wePart={key,pa:"",pb:""};
+    setTimeout(()=>weDoubles(a,b),0);
+    return `<details class="westbox" id="we-box"${op}><summary><b>Win estimator</b> <span class="muted" style="font-size:12px;font-weight:400">(unofficial, from Elo – tap to open)</span></summary>
+      <p class="sub" style="margin:8px 0 0">Choose each side's partner. A pair's rating is the average of its two players' doubles Elo ratings.</p>
+      <div class="we-pick"><div><label>${esc(a)} &amp; <input type="text" class="we-p" data-side="pa" list="names" placeholder="partner" aria-label="Partner of ${esc(a)}" value="${esc(S.wePart.pa)}"></label></div>
+      <div class="we-vs">v</div><div><label>${esc(b)} &amp; <input type="text" class="we-p" data-side="pb" list="names" placeholder="partner" aria-label="Partner of ${esc(b)}" value="${esc(S.wePart.pb)}"></label></div></div>
+      <div id="we-out"></div>${WE_NOTE}</details>`;
+  }
+  const E=D().elo, ea=E.players[a], eb=E.players[b];
+  if(!ea||!eb) return `<details class="westbox" id="we-box"${op}><summary><b>Win estimator</b></summary><p class="sub">Needs an Elo rating for both players.</p></details>`;
+  const prov=[ea.m<E.provisional?a:null,eb.m<E.provisional?b:null].filter(Boolean);
+  return `<details class="westbox" id="we-box"${op}><summary><b>Win estimator</b> <span class="muted" style="font-size:12px;font-weight:400">(unofficial, from Elo – tap to open)</span></summary>${weBlock(a,b,ea.now,eb.now,prov)}${WE_NOTE}</details>`;
 }
 function renderH2H(){
   $("#h2h-a").value=S.a; $("#h2h-b").value=S.b;
@@ -2235,19 +2261,21 @@ function compareHTML(a,b){
     const ids=idxFor(S.disc).byPlayer[p]||[], M=D().matches; let w=0,l=0; ids.forEach(i=>{const m=M[i]; if(!m[6]||!mOK(S.disc,m))return; const s=m[3].includes(p)?1:2; m[6]===s?w++:l++;});
     const cur=(rkSnaps().slice(-1)[0]?.rows||[]).find(r=>r[1]===p);
     const bb=(TT().winch||[]).filter(r=>r[1].includes(p)).length;
-    return {titles:o.S+o.D,S:o.S,D:o.D,NS:o.NS,ND:o.ND,nf:o.nsF+o.ndF,reg:o.RS+o.RD,sb:se.Singles,db:se.Doubles,cur:cur?cur[0]:null,elo:el?el.now:null,pk:el&&el.pk?el.pk[0]:null,w,l,pc:w+l?Math.round(100*w/(w+l)):null,pts:ac?ac.pts:0,tier:ac?ac.tier:null,bb,span:o.first?`${o.first}–${o.last}`:""};};
+    return {titles:o.S+o.D,S:o.S,D:o.D,NS:o.NS,ND:o.ND,nf:o.nsF+o.ndF+o.NS+o.ND,reg:o.RS+o.RD,sb:se.Singles,db:se.Doubles,cur:cur?cur[0]:null,elo:el?el.now:null,pk:el&&el.pk?el.pk[0]:null,w,l,pc:w+l?Math.round(100*w/(w+l)):null,pts:ac?ac.pts:0,tier:ac?ac.tier:null,bb,span:o.first?`${o.first}–${o.last}`:""};};
   const sa=st(a), sb=st(b);
   const row=(lab,va,vb,better="high",fmtv=v=>v??"–")=>{let ca="",cb="";
     if(va!=null&&vb!=null&&va!==vb&&better){const aw=better==="high"?va>vb:va<vb; ca=aw?"cw":"cl"; cb=aw?"cl":"cw";}
     return `<tr><td class="r cmpv ${ca}">${fmtv(va)}</td><td class="cmpl">${lab}</td><td class="cmpv ${cb}">${fmtv(vb)}</td></tr>`;};
+  const pairRow=(lab,a1,a2,b1,b2)=>{const c=(x,y)=>x===y?"":(x>y?"w":"l"), n=(v,k)=>`<span class="cn ${k}">${v}</span>`;
+    return `<tr><td class="r cmpv">${n(a1,c(a1,b1))} / ${n(a2,c(a2,b2))}</td><td class="cmpl">${lab}</td><td class="cmpv">${n(b1,c(b1,a1))} / ${n(b2,c(b2,a2))}</td></tr>`;};
   const rk=v=>v?"#"+v:"–", dd=S.disc==="Doubles", dk=x=>dd?x.db:x.sb;
   const sec=t=>`<tr class="cmpsec"><td colspan="3">${t}</td></tr>`;
   let h=`<h3 style="margin-top:6px">Career comparison</h3><div class="tablewrap" style="max-height:none"><table class="cmp"><thead><tr><th class="r" style="font-size:17px;color:${PALETTE[0]}">${TIP(a)}</th><th></th><th style="font-size:17px;color:${PALETTE[1]}">${TIP(b)}</th></tr></thead><tbody>`+
     sec("Overall – singles and doubles together <span class='muted' style='font-weight:400;font-size:12.5px'>– open titles and match records exclude Winchester; Barnes Bridge is shown separately</span>")+
-    row("Open titles",sa.titles,sb.titles)+row("Singles / doubles titles",`${sa.S} / ${sa.D}`,`${sb.S} / ${sb.D}`,null)+
-    row("National titles",sa.NS+sa.ND,sb.NS+sb.ND)+row("National singles / doubles",`${sa.NS} / ${sa.ND}`,`${sb.NS} / ${sb.ND}`,null)+row("National finals lost",sa.nf,sb.nf,null)+row("Regional titles",sa.reg,sb.reg)+
+    row("Open titles",sa.titles,sb.titles)+pairRow("Singles / doubles titles",sa.S,sa.D,sb.S,sb.D)+
+    row("National titles",sa.NS+sa.ND,sb.NS+sb.ND)+pairRow("National singles / doubles",sa.NS,sa.ND,sb.NS,sb.ND)+row("National finals",sa.nf,sb.nf)+row("Regional titles",sa.reg,sb.reg)+
     row("Barnes Bridge titles",sa.bb,sb.bb)+row("Achievement points",sa.pts,sb.pts)+
-    (()=>{let ta="",tb=""; if(sa.tier&&sb.tier&&sa.pts!==sb.pts){const aw=sa.pts>sb.pts; ta=aw?"cw":"cl"; tb=aw?"cl":"cw";}
+    (()=>{let ta="",tb=""; if(sa.tier&&sb.tier){ if(sa.tier.name===sb.tier.name){ta=tb="cw";} else {const aw=sa.tier.min>sb.tier.min; ta=aw?"cw":"cl"; tb=aw?"cl":"cw";} }
       return `<tr><td class="r cmpv ${ta}">${sa.tier?tierBadge(sa.tier)+" "+esc(sa.tier.name):""}</td><td class="cmpl">Achievement title</td><td class="cmpv ${tb}">${sb.tier?tierBadge(sb.tier)+" "+esc(sb.tier.name):""}</td></tr>`;})()+
     `<tr><td class="r muted">${esc(sa.span)}</td><td class="cmpl">Title-winning years</td><td class="muted">${esc(sb.span)}</td></tr>`+
     sec(S.disc+(S.disc==="Doubles"?" (excluding Winchester)":"")+" only <span class='muted' style='font-weight:400;font-size:12.5px'>– use the Singles / Doubles switch at the top to change</span>")+
@@ -2603,6 +2631,8 @@ $("#ac-q").addEventListener("input",renderAchieve);
 $("#wi-q").addEventListener("input",e=>{S.wq=e.target.value; renderWinch();});
 $("#wi-se").addEventListener("change",e=>{S.wse=e.target.value; renderWinch();});
 $("#h2h-u").addEventListener("click",()=>{S.inclU=!S.inclU; renderH2H(); writeHash();});
+document.addEventListener("toggle",e=>{ if(e.target&&e.target.id==="we-box") S.weOpen=e.target.open; },true);
+document.addEventListener("change",e=>{ const t=e.target; if(t&&t.classList&&t.classList.contains("we-p")){ S.wePart[t.dataset.side]=t.value.trim(); weDoubles(S.a,S.b); } });
 $("#tdlg-close").addEventListener("click",()=>{const d=$("#tdlg"); d.close?d.close():d.removeAttribute("open");});
 $("#tdlg").addEventListener("click",e=>{if(e.target.id==="tdlg"){const d=$("#tdlg"); d.close?d.close():d.removeAttribute("open");}});
 $("#elo-bypeak").addEventListener("click",e=>{S.eloPeak=!S.eloPeak; e.target.setAttribute("aria-pressed",S.eloPeak); renderElo();});
