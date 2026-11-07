@@ -669,8 +669,9 @@ const EV_MONTH=[[/^South West/,7.5],[/^South East/,9],[/^London/,9.5],[/^Yorkshi
 function tX(disc,t){            // tournament index -> decimal year, using each event's usual month (seasons run July-June)
   const X=DATA.disc[disc];
   if(!X._sx){ X._sx={}; const used={};
-    (X.tinfo||[]).forEach(([n,sl],i)=>{ const y0=+sl.slice(0,4); const mm=(EV_MONTH.find(([rx])=>rx.test(n))||[0,6.5])[1];
-      let x=(mm>=7?y0:y0+1)+(mm-1)/12; const k=Math.round(x*120); used[k]=(used[k]||0)+1; X._sx[i]=x+(used[k]-1)*0.012; }); }
+    (X.tinfo||[]).forEach(([n,sl],i)=>{ const y0=+sl.slice(0,4); const mm=(/^U25/.test(n)&&y0>=2024)?10.5:(EV_MONTH.find(([rx])=>rx.test(n))||[0,6.5])[1];
+      let x=(mm>=7?y0:y0+1)+(mm-1)/12; const k=Math.round(x*120); used[k]=(used[k]||0)+1; X._sx[i]=x+(used[k]-1)*0.012; });
+    (X.tinfo||[]).forEach((t,i)=>{ if(i&&t[1]===X.tinfo[i-1][1]&&X._sx[i]<=X._sx[i-1]) X._sx[i]=X._sx[i-1]+0.012; }); }
   return X._sx[t];
 }
 function snapX(disc,s){
@@ -1271,8 +1272,8 @@ function renderElo(){
   const names=Object.keys(sel);
   $("#elo-chips").innerHTML=names.map((n,i)=>`<span class="chip"><i style="background:${PALETTE[i%10]}"></i>${esc(n)}<button aria-label="Remove ${esc(n)}" data-erm="${esc(n)}">×</button></span>`).join("");
   const exX=eloX(S.disc);
-  const ds=names.map((n,i)=>{const h=(E.players[n]||{h:[]}).h; const pts=[]; let cur=null,j=0;
-    for(let t=0;t<E.labels.length;t++){while(j<h.length&&h[j][0]===t){cur=h[j][1];j++;} if(cur!=null&&exX[t]!=null) pts.push({x:exX[t],y:cur,lab:E.labels[t]});}
+  const ds=names.map((n,i)=>{const h=(E.players[n]||{h:[]}).h; const pts=[]; let cur=null,j=0,px=-1e9;
+    for(let t=0;t<E.labels.length;t++){while(j<h.length&&h[j][0]===t){cur=h[j][1];j++;} if(cur!=null&&exX[t]!=null){const xx=(px-exX[t]<0.3)?Math.max(exX[t],px):exX[t]; px=xx; pts.push({x:xx,y:cur,lab:E.labels[t]});}}
     return {label:n,data:pts,borderColor:PALETTE[i%10],backgroundColor:PALETTE[i%10],pointRadius:0,stepped:true,spanGaps:false};});
   const exs=exX.filter(v=>v!=null);
   lineChart("elo",$("#elo-chart"),null,ds,{xy:true,ytitle:"Elo",xmin:Math.floor(Math.min(...exs)),xmax:Math.ceil(Math.max(...exs))});
