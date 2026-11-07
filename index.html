@@ -2553,10 +2553,9 @@ const DISC_TABS=new Set(["rankings","moves","elo","player","h2h","records","stre
 
 /* ---------------- Elo honours ---------------- */
 const EHON={};
-const COVID_YEARS=[2020,2021];
-function eloActive(disc,n,y){   // played that year; Covid years (2020-21) also keep anyone who played in 2019 and came back in 2021-22
+function eloActive(disc,n,y){   // played that year; 2020 (Covid) also keeps anyone who played in 2019
   const PL=eloPlayed(disc); if(PL.has(n+"|"+y)) return true;
-  return COVID_YEARS.includes(y)&&PL.has(n+"|2019")&&(PL.has(n+"|2021")||PL.has(n+"|2022"));
+  return y===2020&&PL.has(n+"|2019");
 }
 function eloPlayed(disc){   // set of "player|year" for players with at least one real match that year (decay points don't count)
   const k="_p"+disc; if(EHON[k]) return EHON[k];
@@ -2590,7 +2589,7 @@ function top3Board(rows,title){   // rows: [{y,top:[{n,..}]}] -> players by numb
 }
 function renderEloHonours(){
   const H=eloHonours(S.disc), d=S.disc.toLowerCase();
-  $("#elo-hon-sub").innerHTML=`${S.disc} Elo, from 1998/99 when the match records begin – so these are modern-era honours only. Players need ${D().elo.provisional}+ rated matches. <b>Active players only</b>: the year-end lists include only players who played at least one match that year. 2020 and 2021 are relaxed for Covid: anyone who played in 2019 and returned in 2021 or 2022 still counts.`;
+  $("#elo-hon-sub").innerHTML=`${S.disc} Elo, from 1998/99 when the match records begin – so these are modern-era honours only. Players need ${D().elo.provisional}+ rated matches. <b>Active players only</b>: the year-end lists include only players who played at least one match that year. 2020 is relaxed for Covid: anyone who played in 2019 still counts.`;
   let h=`<div class="recs">`;
   h+=miniCard("Highest peak ratings","All time (from 1998/99).",["Player","r:Peak","Reached at"],H.peaks.slice(0,12).map(o=>trow([TIP(o.n),[o.pk],`<span class="muted">${esc(o.at)}</span>`])));
   h+=miniCard("Top of the Elo list at year end","Most years finishing as the highest-rated player. Active players only (played that year).",["Player","r:Years","Which"],Object.entries(H.cnt).sort((a,b)=>b[1]-a[1]).map(([n,k])=>trow([TIP(n),[k],`<span class="muted" style="font-size:13px">${H.ye.filter(o=>o.n===n).map(o=>o.y).join(", ")}</span>`])));
