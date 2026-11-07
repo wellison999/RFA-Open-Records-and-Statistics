@@ -1,0 +1,19 @@
+name: Check site data
+
+# Fails the commit (red cross, email from GitHub) if the ranking-movements history or points breakdown
+# is missing or out of date in index.html. It does not block the push or change the site.
+on:
+  push:
+    branches: [main]
+    paths: [index.html, check-data.js, .github/workflows/check-data.yml]
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node check-data.js index.html
