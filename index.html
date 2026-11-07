@@ -406,13 +406,13 @@ a{color:inherit}
   <section id="tab-pairs" hidden>
     <div class="panel">
       <h2>Pairs</h2>
-      <p class="sub">Every doubles partnership: titles won together (back to the 1920s) and main-draw matches together from 1998/99. U25 and University events are left out.</p>
+      <p class="sub">Every doubles partnership: titles won together (back to the 1920s) and main-draw matches together from 1998/99. U25 and University events, and Winchester Fives, are left out.</p>
       <div class="row" style="margin-top:10px"><input type="search" id="pr-q" list="names" placeholder="Find a pair or player" aria-label="Find a pair"></div>
       <div id="pr-body"></div>
     </div>
   </section>
-  <section id="tab-trec" hidden><div class="panel"><h2>Title records</h2><p class="sub">Records from every open title since the 1920s – singles and doubles together.</p><div id="trec-body"></div></div></section>
-  <section id="tab-streaks" hidden><div class="panel"><h2>Streaks &amp; close matches</h2><div id="rec-streaks"></div></div></section>
+  <section id="tab-trec" hidden><div class="panel"><h2>Title records</h2><p class="sub">Records from every open title since the 1920s – singles and doubles together. Winchester Fives (the Barnes Bridge) isn't counted as an open title; it appears only in the Two-code champions card.</p><div id="trec-body"></div></div></section>
+  <section id="tab-streaks" hidden><div class="panel"><h2>Streaks &amp; close matches</h2><p class="sub">Main-draw results at the open tournaments (no Winchester Fives).</p><div id="rec-streaks"></div></div></section>
   <section id="tab-upsets" hidden><div class="panel"><div id="rec-upsets"></div></div></section>
   <section id="tab-venues" hidden><div class="panel"><div id="rec-venues"></div></div></section>
   <section id="tab-records" hidden>
@@ -1181,7 +1181,7 @@ function renderH2H(){
 function renderElo(){
   const E=D().elo, maxYear=Math.max(...E.labels.map(l=>+l.match(/(\d{4})/)[1]));
   const q=$("#elo-search").value.trim().toLowerCase(), dc=E.decay??0.2, st=E.start??1500;
-  $("#elo-sub").textContent=`For interest – a different method from the official rankings. Everyone starts at ${st}; each win takes points from the loser, more for beating a stronger player. ${S.eloActive?`Showing players active in ${maxYear-1}–${maxYear} with at least ${E.provisional} matches.`:`Players with fewer than ${E.provisional} matches are provisional.`}`;
+  $("#elo-sub").textContent=`For interest – a different method from the official rankings, using open-tournament match results only (no Winchester Fives). Everyone starts at ${st}; each win takes points from the loser, more for beating a stronger player. ${S.eloActive?`Showing players active in ${maxYear-1}–${maxYear} with at least ${E.provisional} matches.`:`Players with fewer than ${E.provisional} matches are provisional.`}`;
   const ex=[1900]; for(let i=0;i<3;i++) ex.push(Math.round(st+(ex[i]-st)*(1-dc)));
   $("#elo-decay").innerHTML=`<summary>How decay works</summary>
     <p>For every calendar year a player has no matches, their rating moves <b>${Math.round(dc*100)}%</b> of the way back towards ${st}, applied at the end of that year. A ${ex[0]} player who stops playing drops to ${ex[1]}, then ${ex[2]}, then ${ex[3]}. Ratings below ${st} rise towards it in the same way.</p>
@@ -1321,7 +1321,7 @@ function renderRecords(){
   const card=(title,sub,head,rows)=>`<div><h3>${title}</h3><p class="sub">${sub}</p><div class="tablewrap"><table><thead><tr>${head.map(h=>`<th${/^r:/.test(h)?' class="r"':""}>${h.replace(/^r:/,"")}</th>`).join("")}</tr></thead><tbody>${rows.join("")}</tbody></table></div></div>`;
   const tr=cells=>`<tr>${cells.map(c=>Array.isArray(c)?`<td class="r">${c[0]}</td>`:`<td>${c}</td>`).join("")}</tr>`;
   const first=R.ends.length?R.ends[0].season:"", lastE=R.ends.length?R.ends[R.ends.length-1]:null;
-  $("#rec-sub").textContent=`${S.disc} rankings records use the season-end rankings from ${first} onwards (the latest season counts its most recent update), and the update-by-update rankings where published. Match statistics use every recorded result from ${R.mFrom} to ${R.mTo}, leaving out U25 and University events. Tournament-win counts are left out on purpose: the honours lists go back much further than this data. See "About the data" for the gaps in the older results.`;
+  $("#rec-sub").textContent=`${S.disc} rankings records use the season-end rankings from ${first} onwards (the latest season counts its most recent update), and the update-by-update rankings where published. Match statistics use every recorded result from ${R.mFrom} to ${R.mTo}, leaving out U25 and University events and Winchester Fives. Tournament-win counts are left out on purpose: the honours lists go back much further than this data. See "About the data" for the gaps in the older results.`;
   const nOnes=R.ones.length, longest=[...R.ones].sort((a,b)=>b.run[0]-a.run[0])[0];
   // colour strip of season-end No.1s
   const cols={}; R.ones.forEach((o,i)=>cols[o.n]=PALETTE[i%10]);
@@ -1436,7 +1436,7 @@ const allRuns=(list,held,min=2)=>{   // every run of consecutive editions (a pla
 };
 function renderTitles(){
   const T=TT(), X=titleIndex();
-  $("#ti-sub").innerHTML=`Men's open singles and doubles titles since the 1920s: the Nationals and the regional opens, plus the Puckle Cup. The RFA's record books up to 2015/16 and its Champions Archive are used for the older years; results from 2018/19 come from the results database, so new titles appear after each update. Drawn-partner doubles (South East Open, and the Scottish Open between 1991 and 2024) aren't counted. <a href="#" data-tab="about">More about the data</a>`;
+  $("#ti-sub").innerHTML=`Men's open singles and doubles titles since the 1920s: the Nationals and the regional opens, plus the Puckle Cup. The RFA's record books up to 2015/16 and its Champions Archive are used for the older years; results from 2018/19 come from the results database, so new titles appear after each update. Drawn-partner doubles (South East Open, and the Scottish Open between 1991 and 2024) aren't counted. Winchester Fives (the Barnes Bridge) isn't counted as an open title – it has its own tab. <a href="#" data-tab="about">More about the data</a>`;
   document.querySelectorAll("[data-tsub]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.tsub===S.tsub));
   document.querySelectorAll("[data-tdisc]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.tdisc===S.tdisc));
   $("#ti-filters").style.display=S.tsub==="stats"?"none":"";
@@ -2389,7 +2389,7 @@ function renderHome(){
   h+=`<div class="recs">`;
   h+=`<div class="tcard"><h3>Latest champions</h3><p class="sub">The most recent open titles.</p><div class="tablewrap"><table><tbody>${lc.map(r=>`<tr${isNat(r[0])?' class="natrow"':""}><td style="white-space:nowrap"><a href="#" data-tev="${esc(r[0])}">${esc(evL(r[0]))}</a> ${dTag(r[1])}<div class="muted" style="font-size:12.5px"><a href="#" data-season="${esc(r[2])}">${esc(r[2])}</a></div></td><td><b>${ppl(r[3])}</b>${r[4].length?`<div class="muted" style="font-size:12.5px">bt ${ppl(r[4])}</div>`:""}</td></tr>`).join("")}</tbody></table></div></div>`;
   const ms=milestones().slice(0,10);
-  h+=`<div class="tcard"><h3>Milestones</h3><p class="sub">Landmarks reached in the last two seasons.</p><div class="tablewrap"><table><tbody>${ms.length?ms.map(o=>`<tr><td>${o.ic?svg(o.ic,"#8A97A5",15):svg("trophy","#B8860B",15)} ${TIP(o.n)}</td><td>${esc(o.txt)}<div class="muted" style="font-size:12.5px">${esc(o.se)} · ${esc(evL(o.ev)||o.ev)}</div></td></tr>`).join(""):`<tr><td class="muted">None yet.</td></tr>`}</tbody></table></div></div>`;
+  h+=`<div class="tcard"><h3>Milestones</h3><p class="sub">Landmarks reached in the last two seasons (Winchester Fives not included).</p><div class="tablewrap"><table><tbody>${ms.length?ms.map(o=>`<tr><td>${o.ic?svg(o.ic,"#8A97A5",15):svg("trophy","#B8860B",15)} ${TIP(o.n)}</td><td>${esc(o.txt)}<div class="muted" style="font-size:12.5px">${esc(o.se)} · ${esc(evL(o.ev)||o.ev)}</div></td></tr>`).join(""):`<tr><td class="muted">None yet.</td></tr>`}</tbody></table></div></div>`;
   const ups=[]; ["Singles","Doubles"].forEach(d=>upsets(d).forEach(u=>{ if(u.ok&&u.gap>0&&mOK(d,u.m)&&latest.includes((DATA.disc[d].tinfo[u.t]||[])[1])) ups.push({...u,d}); }));
   ups.sort((a,b)=>b.gap-a.gap);
   h+=miniCard("Recent upsets","Biggest Elo upsets in the last two seasons.",["Match","r:Elo gap","Event"],ups.slice(0,6).map(u=>trow([`${ppl(u.w)} <span class="muted">bt</span> ${ppl(u.l)}`,[u.gap],`<a href="#" data-tourn="${u.d}|${u.t}">${esc(tName2(u.d,u.t))}</a>`])),false);
