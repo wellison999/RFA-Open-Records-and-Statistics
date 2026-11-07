@@ -2553,6 +2553,12 @@ const DISC_TABS=new Set(["rankings","moves","elo","player","h2h","records","stre
 
 /* ---------------- Elo honours ---------------- */
 const EHON={};
+function eloPlayed(disc){   // set of "player|year" for players with at least one real match that year (decay points don't count)
+  const k="_p"+disc; if(EHON[k]) return EHON[k];
+  const Dd=DATA.disc[disc], L=Dd.elo.labels, set=new Set();
+  Dd.matches.forEach(m=>{ const y=(String(L[m[0]]).match(/(\d{4})/)||[0,0])[1]; [...m[3],...m[4]].forEach(n=>set.add(n+"|"+y)); });
+  return EHON[k]=set;
+}
 function eloHonours(disc){
   if(EHON[disc]) return EHON[disc];
   const E=DATA.disc[disc].elo, L=E.labels, yr=l=>+(String(l).match(/(\d{4})/)||[0,0])[1];
@@ -2562,7 +2568,8 @@ function eloHonours(disc){
   const years=Object.keys(lastIdx).map(Number).sort((a,b)=>a-b), ye=[];
   years.forEach(y=>{ const idx=lastIdx[y]; let best=null;
     const all=[];
-    ps.forEach(([n,v])=>{ if(!v.h.some(x=>yr(L[x[0]])===y)) return;      // played (rating moved) that year
+    const PL=eloPlayed(disc);
+    ps.forEach(([n,v])=>{ if(!PL.has(n+"|"+y)) return;      // played a real match that year
       let r=null; for(const x of v.h){ if(x[0]<=idx) r=x[1]; else break; } if(r!=null){ all.push({n,r}); if(!best||r>best.r) best={n,r}; } });
     if(best) ye.push({y,...best,top:all.sort((a,b)=>b.r-a.r).slice(0,5)}); });
   const cnt={}; ye.forEach(o=>cnt[o.n]=(cnt[o.n]||0)+1);
@@ -2592,7 +2599,7 @@ function eloCombined(){
     const sMap={}, dMap={}, act=new Set();
     ["Singles","Doubles"].forEach(d=>{ const idx=idxAt(d,y), mp=d==="Singles"?sMap:dMap;
       info[d].ps.forEach(([n,v])=>{ const r=rate(v,idx); if(r==null) return; mp[n]=r;
-        if(v.h.some(x=>yr(info[d].L[x[0]])===y)) act.add(n); }); });
+        if(eloPlayed(d).has(n+"|"+y)) act.add(n); }); });
     const all=[]; act.forEach(n=>{ if(sMap[n]!=null&&dMap[n]!=null) all.push({n,s:sMap[n],d:dMap[n],t:sMap[n]+dMap[n]}); });
     all.sort((a,b)=>b.t-a.t); if(all.length) rows.push({y,top:all.slice(0,5)});
   });
