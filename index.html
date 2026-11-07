@@ -1566,7 +1566,7 @@ function titleStatsHTML(){
   const finSeason={}; L.forEach(r=>[...r[3],...r[4]].forEach(n=>{const k=n+"|"+r[2]; finSeason[k]=(finSeason[k]||0)+1;}));
   const bestFinSeason=Object.entries(finSeason).sort((a,b)=>b[1]-a[1]).slice(0,10);
   // runs of consecutive National titles / finals
-  const natRuns=(kind)=>{const out=[]; ["National Singles","National Doubles"].forEach(ev=>{const disc=ev.split(" ")[1], held=X.held[ev+"|"+disc]||[]; const per={};
+  const natRuns=(kind,evs=["National Singles","National Doubles"])=>{const out=[]; evs.forEach(ev=>{const disc=ev.split(" ")[1], held=X.held[ev+"|"+disc]||[]; const per={};
       L.filter(r=>r[0]===ev).forEach(r=>(kind==="final"?[...r[3],...r[4]]:r[3]).forEach(n=>(per[n]=per[n]||[]).push(r[2])));
       Object.entries(per).forEach(([n,ss])=>{allRuns(ss,held).forEach(rr=>out.push({n,ev,...rr}));});});
     out.sort((a,b)=>b.run-a.run||a.from.localeCompare(b.from)); const cut=out.length>10?out[9].run:0; return out.filter((o,i)=>i<10||o.run===cut);};   // ties at the cut-off all shown
@@ -1596,10 +1596,10 @@ function titleStatsHTML(){
   h+=miniCard("Most finals","Open tournament finals reached, won or lost. Runners-up are known for the Nationals throughout and for the regional opens from 1998/99.",["Player","r:Finals","r:Won"],
     mostFinals.map(o=>trow([TIP(o.n),[o.f],[o.w]])));
   h+=miniCard("Most finals in one season","",["Player","Season","r:Finals"],bestFinSeason.map(([k,v])=>trow([TIP(k.split("|")[0]),esc(k.split("|")[1]),[v]])));
-  h+=miniCard("Longest runs of National titles","Consecutive National championships won.",["Player","Event","r:In a row","Seasons"],
-    natTitleRuns.map(o=>trow([TIP(o.n),esc(o.ev),[o.run],`<span class="muted">${esc(o.from)}–${esc(o.to)}</span>`])));
-  h+=miniCard("Longest runs of National finals","Consecutive National finals reached, won or lost.",["Player","Event","r:In a row","Seasons"],
-    natFinalRuns.map(o=>trow([TIP(o.n),esc(o.ev),[o.run],`<span class="muted">${esc(o.from)}–${esc(o.to)}</span>`])));
+  const natRunCard=(title,sub,kind)=>{ const view=(k,evs)=>`<div data-nrview="${k}"${k==="all"?"":" hidden"}><div class="tablewrap"><table><thead><tr><th>Player</th><th>Event</th><th class="r">In a row</th><th>Seasons</th></tr></thead><tbody>${shadeRows(natRuns(kind,evs).map(o=>trow([TIP(o.n),esc(o.ev),[o.run],`<span class="muted">${esc(o.from)}–${esc(o.to)}</span>`])),true,true).join("")}</tbody></table></div></div>`;
+    return `<div class="tcard" data-nrcard><h3>${title}</h3><p class="sub">${sub}</p><div class="seg" role="group" style="margin:0 0 8px;display:inline-flex">${[["all","Both"],["Singles","Singles"],["Doubles","Doubles"]].map((o,i)=>`<button data-nrk="${o[0]}" aria-pressed="${i===0}">${o[1]}</button>`).join("")}</div>${view("all",["National Singles","National Doubles"])}${view("Singles",["National Singles"])}${view("Doubles",["National Doubles"])}</div>`; };
+  h+=natRunCard("Longest runs of National titles","Consecutive National championships won.","title");
+  h+=natRunCard("Longest runs of National finals","Consecutive National finals reached, won or lost.","final");
   h+=miniCard("Most National Singles finals","",["Player","r:Finals","r:Won"],natS.map(o=>trow([TIP(o.n),[o.f],[o.w]])));
   h+=miniCard("Most National Doubles finals","",["Player","r:Finals","r:Won"],natD.map(o=>trow([TIP(o.n),[o.fd],[o.wd]])));
   h+=miniCard("Most National finals lost","Singles and doubles.",["Player","r:Lost","r:Won"],bridesmaid.map(o=>trow([TIP(o.n),[o.l],[o.w+o.wd]])));
@@ -2331,7 +2331,7 @@ function titleRunData(){
 }
 function titleRuns(mode,nat,byHeld){
   const {held,ent,got}=titleRunData();
-  const keep=e=>(mode==="Overall"||e.d===mode)&&(nat||!isNat(e.ev));
+  const keep=e=>(mode==="Overall"||e.d===mode)&&(nat===2?isNat(e.ev):(nat||!isNat(e.ev)));
   const best={};
   const note=(p,c,from,to)=>{ if(!best[p]||c>best[p].n) best[p]={p,n:c,from,to}; };
   if(byHeld){ const seq=held.filter(keep), cur={};
@@ -2342,18 +2342,21 @@ function titleRuns(mode,nat,byHeld){
     const seq=held.filter(e=>keep(e)&&e.se>="1998/99"), ppl=new Set(Object.keys(got)); seq.forEach(e=>e.win.forEach(p=>ppl.add(p)));
     ppl.forEach(p=>{ const g=got[p]||{}; let c=0,from=null; seq.forEach(e=>{ const won=e.win.has(p), t=tOf[e.d+"|"+e.ev+"|"+e.se]; if(!won&&(t==null||!g[e.d+"|"+t])) return;   // didn't enter (or no record)
       if(won){ if(!c) from=e; c++; note(p,c,from,e); } else c=0; }); }); }
-  return Object.values(best).filter(o=>o.n>=(byHeld?2:3)).sort((a,b)=>b.n-a.n||a.from.se.localeCompare(b.from.se)).slice(0,12);
+  return Object.values(best).filter(o=>o.n>=(byHeld||nat===2?2:3)).sort((a,b)=>b.n-a.n||a.from.se.localeCompare(b.from.se)).slice(0,12);
 }
 function titleRunsCard(){
   const lbl=e=>`${esc(evL?evL(e.ev):e.ev)}${e.d==="Doubles"&&!isNat(e.ev)?" doubles":""} ${esc(e.se)}`;
   const tbl=(m,nat,hd)=>{ const rr=titleRuns(m,nat,hd); return rr.length?`<div class="tablewrap"><table><thead><tr><th>Player</th><th class="r">In a row</th><th>From – to</th></tr></thead><tbody>${shadeRows(rr.map(o=>`<tr><td>${TIP(o.p)}</td><td class="r">${o.n}</td><td><span class="muted" style="font-size:13px">${lbl(o.from)} – ${lbl(o.to)}</span></td></tr>`)).join("")}</tbody></table></div>`:`<p class="muted">No runs long enough to list.</p>`; };
   const seg=(k,opts)=>`<div class="seg" role="group" style="margin:0 8px 8px 0;display:inline-flex">${opts.map((o,i)=>`<button data-trk="${k}" data-trv="${o[0]}" aria-pressed="${i===0}">${o[1]}</button>`).join("")}</div>`;
-  let views=""; [1,0].forEach(nat=>[0,1].forEach(hd=>["Overall","Singles","Doubles"].forEach(m=>{ const id=`${nat}${hd}${m}`; views+=`<div data-trview="${id}"${id==="10Overall"?"":" hidden"}>${tbl(m,nat,hd)}</div>`; })));
+  let views=""; [1,0,2].forEach(nat=>[0,1].forEach(hd=>["Overall","Singles","Doubles"].forEach(m=>{ const id=`${nat}${hd}${m}`; views+=`<div data-trview="${id}"${id==="10Overall"?"":" hidden"}>${tbl(m,nat,hd)}</div>`; })));
   return `<div class="tcard wide" id="trun-card"><h3>Titles in a row</h3>
-    <p class="sub"><b>Tournaments entered</b>: consecutive open tournaments they played and won, so missing one doesn't break a run (from 1998/99, when the match data starts; winners from the title lists, entries from the match data – where an edition's draw wasn't reported, only the winner counts as having entered; runs of 3+). <b>Every edition held</b>: they won every one in a row, so missing one ends the run (title lists, all years, runs of 2+). Overall takes singles and doubles together in date order. U25, University, qualifiers, challengers and handicap events don't count; regional titles include the Puckle Cup.</p>
-    ${seg("nat",[["1","All open"],["0","Regional only"]])}${seg("hd",[["0","Tournaments entered"],["1","Every edition held"]])}${seg("m",[["Overall","Overall"],["Singles","Singles"],["Doubles","Doubles"]])}
+    <p class="sub"><b>Tournaments entered</b>: consecutive open tournaments they played and won, so missing one doesn't break a run (from 1998/99, when the match data starts; winners from the title lists, entries from the match data – where an edition's draw wasn't reported, only the winner counts as having entered; runs of 3+). <b>Every edition held</b>: they won every one in a row, so missing one ends the run (title lists, all years, runs of 2+). Overall takes singles and doubles together in date order. U25, University, qualifiers, challengers and handicap events don't count; regional titles include the Puckle Cup. "National only" counts just the National Singles and National Doubles (runs of 2+).</p>
+    ${seg("nat",[["1","All open"],["0","Regional only"],["2","National only"]])}${seg("hd",[["0","Tournaments entered"],["1","Every edition held"]])}${seg("m",[["Overall","Overall"],["Singles","Singles"],["Doubles","Doubles"]])}
     ${views}</div>`;
 }
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest("[data-nrk]"); if(!b) return; const card=b.closest("[data-nrcard]");
+  card.querySelectorAll("[data-nrk]").forEach(x=>x.setAttribute("aria-pressed",x===b));
+  card.querySelectorAll("[data-nrview]").forEach(x=>x.hidden=x.dataset.nrview!==b.dataset.nrk); });
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest("[data-trk]"); if(!b) return; const card=b.closest("#trun-card");
   card.querySelectorAll(`[data-trk="${b.dataset.trk}"]`).forEach(x=>x.setAttribute("aria-pressed",x===b));
   const v=k=>card.querySelector(`[data-trk="${k}"][aria-pressed="true"]`).dataset.trv, id=v("nat")+v("hd")+v("m");
