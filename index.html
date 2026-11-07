@@ -2270,6 +2270,10 @@ function compareHTML(a,b){
     return `<tr><td class="r cmpv">${n(a1,c(a1,b1))} / ${n(a2,c(a2,b2))}</td><td class="cmpl">${lab}</td><td class="cmpv">${n(b1,c(b1,a1))} / ${n(b2,c(b2,a2))}</td></tr>`;};
   const rk=v=>v?"#"+v:"–", dd=S.disc==="Doubles", dk=x=>dd?x.db:x.sb;
   const sec=t=>`<tr class="cmpsec"><td colspan="3">${t}</td></tr>`;
+  const VW=achieveIndex().views[dd?"D":"S"].list, va=VW.find(o=>o.a.n===a), vb=VW.find(o=>o.a.n===b);
+  const vTier=()=>{let ta="",tb=""; if(va&&vb&&va.tier&&vb.tier){ if(va.tier.name===vb.tier.name){ta=tb="cw";} else {const aw=va.pts>vb.pts; ta=aw?"cw":"cl"; tb=aw?"cl":"cw";} }
+    const cell=o=>o&&o.tier?tierBadge(o.tier)+" "+esc(o.tier.name):"–";
+    return `<tr><td class="r cmpv ${ta}">${cell(va)}</td><td class="cmpl">${S.disc} achievement title</td><td class="cmpv ${tb}">${cell(vb)}</td></tr>`;};
   let h=`<h3 style="margin-top:6px">Career comparison</h3><div class="tablewrap" style="max-height:none"><table class="cmp"><thead><tr><th class="r" style="font-size:17px;color:${PALETTE[0]}">${TIP(a)}</th><th></th><th style="font-size:17px;color:${PALETTE[1]}">${TIP(b)}</th></tr></thead><tbody>`+
     sec("Overall – singles and doubles together <span class='muted' style='font-weight:400;font-size:12.5px'>– open titles and match records exclude Winchester; Barnes Bridge is shown separately</span>")+
     row("Open titles",sa.titles,sb.titles)+pairRow("Singles / doubles titles",sa.S,sa.D,sb.S,sb.D)+
@@ -2279,7 +2283,7 @@ function compareHTML(a,b){
       return `<tr><td class="r cmpv ${ta}">${sa.tier?tierBadge(sa.tier)+" "+esc(sa.tier.name):""}</td><td class="cmpl">Achievement title</td><td class="cmpv ${tb}">${sb.tier?tierBadge(sb.tier)+" "+esc(sb.tier.name):""}</td></tr>`;})()+
     `<tr><td class="r muted">${esc(sa.span)}</td><td class="cmpl">Title-winning years</td><td class="muted">${esc(sb.span)}</td></tr>`+
     sec(S.disc+(S.disc==="Doubles"?" (excluding Winchester)":"")+" only <span class='muted' style='font-weight:400;font-size:12.5px'>– use the Singles / Doubles switch at the top to change</span>")+
-    row(`${S.disc} titles`,dd?sa.D:sa.S,dd?sb.D:sb.S)+row(`National ${S.disc.toLowerCase()} titles`,dd?sa.ND:sa.NS,dd?sb.ND:sb.NS)+
+    row(`${S.disc} titles`,dd?sa.D:sa.S,dd?sb.D:sb.S)+row(`National ${S.disc.toLowerCase()} titles`,dd?sa.ND:sa.NS,dd?sb.ND:sb.NS)+row(`${S.disc} achievement points`,va?va.pts:0,vb?vb.pts:0)+vTier()+
     row("Best season-end ranking",dk(sa).best,dk(sb).best,"low",rk)+row("Season-end No. 1",dk(sa).n1,dk(sb).n1)+row("Season-end top 10",dk(sa).t10,dk(sb).t10)+
     row("Current ranking",sa.cur,sb.cur,"low",rk)+row("Elo now",sa.elo,sb.elo)+row("Peak Elo",sa.pk,sb.pk)+
     row("Main-draw record",sa.w+sa.l?`${sa.w}–${sa.l}`:null,sb.w+sb.l?`${sb.w}–${sb.l}`:null,null)+row("Win rate",sa.pc,sb.pc,"high",v=>v==null?"–":v+"%")+
