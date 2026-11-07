@@ -2206,7 +2206,8 @@ function compareHTML(a,b){
     row("Open titles",sa.titles,sb.titles)+row("Singles / doubles titles",`${sa.S} / ${sa.D}`,`${sb.S} / ${sb.D}`,null)+
     row("National titles",sa.NS+sa.ND,sb.NS+sb.ND)+row("National singles / doubles",`${sa.NS} / ${sa.ND}`,`${sb.NS} / ${sb.ND}`,null)+row("National finals lost",sa.nf,sb.nf,null)+row("Regional titles",sa.reg,sb.reg)+
     row("Barnes Bridge titles",sa.bb,sb.bb)+row("Achievement points",sa.pts,sb.pts)+
-    `<tr><td class="r">${sa.tier?tierBadge(sa.tier)+" "+esc(sa.tier.name):""}</td><td class="cmpl">Achievement title</td><td>${sb.tier?tierBadge(sb.tier)+" "+esc(sb.tier.name):""}</td></tr>`+
+    (()=>{let ta="",tb=""; if(sa.tier&&sb.tier&&sa.pts!==sb.pts){const aw=sa.pts>sb.pts; ta=aw?"cw":"cl"; tb=aw?"cl":"cw";}
+      return `<tr><td class="r cmpv ${ta}">${sa.tier?tierBadge(sa.tier)+" "+esc(sa.tier.name):""}</td><td class="cmpl">Achievement title</td><td class="cmpv ${tb}">${sb.tier?tierBadge(sb.tier)+" "+esc(sb.tier.name):""}</td></tr>`;})()+
     `<tr><td class="r muted">${esc(sa.span)}</td><td class="cmpl">Title-winning years</td><td class="muted">${esc(sb.span)}</td></tr>`+
     sec(S.disc+" only <span class='muted' style='font-weight:400;font-size:12.5px'>– use the Singles / Doubles switch at the top to change</span>")+
     row(`${S.disc} titles`,dd?sa.D:sa.S,dd?sb.D:sb.S)+row(`National ${S.disc.toLowerCase()} titles`,dd?sa.ND:sa.NS,dd?sb.ND:sb.NS)+
