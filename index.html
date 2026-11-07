@@ -2561,9 +2561,10 @@ function eloHonours(disc){
   const peaks=ps.filter(([n,v])=>v.pk).map(([n,v])=>({n,pk:v.pk[0],at:v.pk[1]})).sort((a,b)=>b.pk-a.pk);
   const years=Object.keys(lastIdx).map(Number).sort((a,b)=>a-b), ye=[];
   years.forEach(y=>{ const idx=lastIdx[y]; let best=null;
+    const all=[];
     ps.forEach(([n,v])=>{ if(!v.h.some(x=>yr(L[x[0]])===y)) return;      // played (rating moved) that year
-      let r=null; for(const x of v.h){ if(x[0]<=idx) r=x[1]; else break; } if(r!=null&&(!best||r>best.r)) best={n,r}; });
-    if(best) ye.push({y,...best}); });
+      let r=null; for(const x of v.h){ if(x[0]<=idx) r=x[1]; else break; } if(r!=null){ all.push({n,r}); if(!best||r>best.r) best={n,r}; } });
+    if(best) ye.push({y,...best,top:all.sort((a,b)=>b.r-a.r).slice(0,3)}); });
   const cnt={}; ye.forEach(o=>cnt[o.n]=(cnt[o.n]||0)+1);
   return EHON[disc]={peaks,ye,cnt,peakRank:Object.fromEntries(peaks.map((o,i)=>[o.n,i+1]))};
 }
@@ -2573,8 +2574,42 @@ function renderEloHonours(){
   let h=`<div class="recs">`;
   h+=miniCard("Highest peak ratings","All time (from 1998/99).",["Player","r:Peak","Reached at"],H.peaks.slice(0,12).map(o=>trow([TIP(o.n),[o.pk],`<span class="muted">${esc(o.at)}</span>`])));
   h+=miniCard("Top of the Elo list at year end","Most years finishing as the highest-rated active player.",["Player","r:Years","Which"],Object.entries(H.cnt).sort((a,b)=>b[1]-a[1]).map(([n,k])=>trow([TIP(n),[k],`<span class="muted" style="font-size:13px">${H.ye.filter(o=>o.n===n).map(o=>o.y).join(", ")}</span>`])));
-  h+=miniCard("Year by year","The highest-rated active player at the end of each year.",["Year","Player","r:Elo"],H.ye.slice().reverse().map((o,i)=>trow([i?String(o.y):`${o.y} <span class="tag">so far</span>`,TIP(o.n),[o.r]])),false);
+  h+=miniCard("Year by year","The three highest-rated active players at the end of each year.",["Year","1st","2nd","3rd"],H.ye.slice().reverse().map((o,i)=>trow([i?String(o.y):`${o.y} <span class="tag">so far</span>`,...[0,1,2].map(k=>o.top[k]?`<span style="white-space:nowrap">${TIP(o.top[k].n)} <span class="muted">${o.top[k].r}</span></span>`:"")])),false,false).replace('<div class="tcard">','<div class="tcard" style="grid-column:1/-1">');
+  h+=eloCombinedCards();
   $("#elo-hon").innerHTML=h+`</div>`;
+}
+function eloCombined(){
+  if(EHON._c) return EHON._c;
+  const yr=l=>+(String(l).match(/(\d{4})/)||[0,0])[1], info={};
+  ["Singles","Doubles"].forEach(d=>{ const E=DATA.disc[d].elo, L=E.labels;
+    info[d]={E,L,ps:Object.entries(E.players).filter(([n,v])=>v.m>=E.provisional)}; });
+  const idxAt=(d,y)=>{ let k=-1; info[d].L.forEach((l,i)=>{ if(yr(l)<=y) k=i; }); return k; };
+  const years=[...new Set([...info.Singles.L,...info.Doubles.L].map(yr))].sort((a,b)=>a-b), rows=[];
+  const rate=(v,idx)=>{ let r=null; for(const x of v.h){ if(x[0]<=idx) r=x[1]; else break; } return r; };
+  years.forEach(y=>{
+    const sMap={}, dMap={}, act=new Set();
+    ["Singles","Doubles"].forEach(d=>{ const idx=idxAt(d,y), mp=d==="Singles"?sMap:dMap;
+      info[d].ps.forEach(([n,v])=>{ const r=rate(v,idx); if(r==null) return; mp[n]=r;
+        if(v.h.some(x=>yr(info[d].L[x[0]])===y)) act.add(n); }); });
+    const all=[]; act.forEach(n=>{ if(sMap[n]!=null&&dMap[n]!=null) all.push({n,s:sMap[n],d:dMap[n],t:sMap[n]+dMap[n]}); });
+    all.sort((a,b)=>b.t-a.t); if(all.length) rows.push({y,top:all.slice(0,3)});
+  });
+  const best=[]; rows.forEach(o=>o.top.forEach(p=>best.push({...p,y:o.y})));
+  best.sort((a,b)=>b.t-a.t);
+  const cnt={}; rows.forEach(o=>cnt[o.top[0].n]=(cnt[o.top[0].n]||0)+1);
+  return EHON._c={rows,best,cnt};
+}
+function eloCombinedCards(){
+  const C=eloCombined(), last=C.rows.length-1, tip=p=>`<span style="white-space:nowrap">${TIP(p.n)} <span class="muted" title="Singles ${p.s} + Doubles ${p.d}">${p.t}</span></span>`;
+  let h=`<div class="tcard" style="grid-column:1/-1"><h3>Combined singles + doubles</h3><p class="sub">Each player's singles Elo plus their doubles Elo at the end of the year (hover for the split). Players need ${D().elo.provisional}+ rated matches in both and must have played that year. Shown for singles and doubles together, whichever is selected above.</p></div>`;
+  h+=miniCard("Highest combined year-ends","Best single year-end totals (each player once).",["Player","r:Total","Year","r:S / D"],
+    (()=>{const seen=new Set(), out=[]; for(const p of C.best){ if(seen.has(p.n)) continue; seen.add(p.n); out.push(p); if(out.length>=12) break; }
+      return out.map(p=>trow([TIP(p.n),[p.t],String(p.y),[`<span class="muted" style="white-space:nowrap">${p.s} / ${p.d}</span>`]]));})());
+  h+=miniCard("Top of the combined list","Most years finishing as the highest combined player.",["Player","r:Years","Which"],
+    Object.entries(C.cnt).sort((a,b)=>b[1]-a[1]).map(([n,k])=>trow([TIP(n),[k],`<span class="muted" style="font-size:13px">${C.rows.filter(o=>o.top[0].n===n).map(o=>o.y).join(", ")}</span>`])));
+  h+=miniCard("Combined year by year","The three highest combined totals at the end of each year.",["Year","1st","2nd","3rd"],
+    C.rows.slice().reverse().map((o,i)=>trow([i?String(o.y):`${o.y} <span class="tag">so far</span>`,...[0,1,2].map(k=>o.top[k]?tip(o.top[k]):"")])),false,false).replace('<div class="tcard">','<div class="tcard" style="grid-column:1/-1">');
+  return h;
 }
 function eloHonourLine(p){
   const H=eloHonours(S.disc), el=D().elo.players[p]; if(!el||!el.pk) return "";
