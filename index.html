@@ -284,6 +284,16 @@ header input[type=search]{background:#EDEDED;color:#222;border:0;border-radius:2
 .btn,.mv-ctl select,.mv-ctl input,input[type=text],select{border-radius:2px}
 a{color:inherit}
 @media (max-width:600px){.top h1{font-size:22px}.board nav button{font-size:13px;padding:12px 10px 10px}}
+.westbox{margin:18px 0 6px;padding:12px 14px;border-radius:10px;border:1px solid var(--line,#d8dde3);background:var(--panel)}
+.westbox summary{cursor:pointer;font-size:16px}.westbox .we-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+@media(max-width:640px){.westbox .we-grid{grid-template-columns:1fr}}
+.westbox .we-f{padding:10px 12px;border-radius:8px;background:color-mix(in srgb,var(--accent) 5%,var(--panel));border:1px solid color-mix(in srgb,var(--accent) 16%,transparent)}
+.westbox .we-f b.fmt{display:block;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.westbox .we-bar{display:flex;height:26px;border-radius:6px;overflow:hidden;font-size:13px;font-weight:700;color:#fff}
+.westbox .we-bar span{display:flex;align-items:center;justify-content:center;min-width:34px}
+.westbox .we-bar .we-a{background:var(--accent)}.westbox .we-bar .we-b{background:#8A97A5}
+.westbox .we-l{display:flex;justify-content:space-between;font-size:13px;margin-top:6px;gap:8px}
+.westbox .we-d{font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.45}
 </style>
 </head>
 <body data-disc="Singles">
@@ -1149,6 +1159,35 @@ function matchRow(m,p){
 }
 
 /* ---------------- head to head ---------------- */
+/* ---------------- win estimator (singles, from Elo) ---------------- */
+const WE={
+  race(q,N){ let t=0,c=1; for(let k=0;k<N;k++){ if(k>0) c=c*(N-1+k)/k; t+=c*Math.pow(q,N)*Math.pow(1-q,k);} return t; },   // chance of reaching N points first if every point is won with chance q
+  best3(g){ return g*g*(3-2*g); },
+  qFor(m){ let lo=0.0001,hi=0.9999; for(let i=0;i<60;i++){ const mid=(lo+hi)/2; (WE.best3(WE.race(mid,15))<m)?lo=mid:hi=mid; } return (lo+hi)/2; },
+  est(ra,rb){
+    const m15=1/(1+Math.pow(10,(rb-ra)/400)), q=WE.qFor(m15), g15=WE.race(q,15), g11=WE.race(q,11);
+    return {m15, g15, m11:WE.best3(g11), g11, q};
+  }
+};
+function winEstHTML(a,b){
+  if(S.disc!=="Singles") return "";
+  const E=D().elo, ea=E.players[a], eb=E.players[b];
+  if(!ea||!eb) return `<details class="westbox"><summary><b>Win estimator</b></summary><p class="sub">Needs an Elo rating for both players.</p></details>`;
+  const r=WE.est(ea.now,eb.now), pc=v=>Math.round(v*100);
+  const prov=[ea.m<E.provisional?a:null,eb.m<E.provisional?b:null].filter(Boolean);
+  const fmt=(title,m,g)=>{ const pa=pc(m), pb=100-pa;
+    const s20=g*g, s21=2*g*g*(1-g), t20=(1-g)*(1-g), t21=2*(1-g)*(1-g)*g;
+    return `<div class="we-f"><b class="fmt">${title}</b>
+      <div class="we-bar" role="img" aria-label="${esc(a)} ${pa}%, ${esc(b)} ${pb}%"><span class="we-a" style="flex:${pa}">${pa}%</span><span class="we-b" style="flex:${pb}">${pb}%</span></div>
+      <div class="we-l"><span>${esc(a)}</span><span>${esc(b)}</span></div>
+      <div class="we-d">Chance of winning a single game: <b>${pc(g)}%</b> / ${100-pc(g)}%.<br>
+      Most likely results: ${esc(a)} wins 2–0 <b>${pc(s20)}%</b>, 2–1 <b>${pc(s21)}%</b>; ${esc(b)} wins 2–0 <b>${pc(t20)}%</b>, 2–1 <b>${pc(t21)}%</b>.</div></div>`; };
+  return `<details class="westbox"><summary><b>Win estimator</b> <span class="muted" style="font-size:12px;font-weight:400">(unofficial, from Elo – tap to open)</span></summary>
+    <p class="sub" style="margin:8px 0 0">${esc(a)} ${Math.round(ea.now)} v ${esc(b)} ${Math.round(eb.now)} – a ${Math.abs(Math.round(ea.now-eb.now))}-point gap in Elo. Best of three games.</p>
+    <div class="we-grid">${fmt("Best of 3 to 15",r.m15,r.g15)}${fmt("Best of 3 to 11",r.m11,r.g11)}</div>
+    ${prov.length?`<p class="caveat" style="margin:8px 0 0">${prov.map(esc).join(" and ")} ${prov.length>1?"have":"has"} played fewer than ${E.provisional} rated matches, so the rating is provisional and the estimate is rough.</p>`:""}
+    <p class="we-d">How it works: Elo gives the chance of winning a match; that is turned into a chance of winning each game, and then re-worked for games to 11 (shorter games are a little more of a lottery, so the favourite's chance dips slightly). Ratings are built from past results in mixed formats and take no account of current form, injuries or conditions – treat it as a guide, not a prediction.</p></details>`;
+}
 function renderH2H(){
   $("#h2h-a").value=S.a; $("#h2h-b").value=S.b;
   const a=S.a,b=S.b,body=$("#h2h-body");
@@ -1168,6 +1207,7 @@ function renderH2H(){
     <div class="side"><div class="num">${wb}</div><div class="who">${esc(b)}</div></div></div>`;
   html+=vs.length?`<div class="tablewrap"><table><thead><tr><th>Tournament</th><th>Round</th>${S.disc==="Doubles"?"<th>Partner</th>":""}<th>Opponent</th><th>Score (${esc(a)} first)</th><th>Result for ${esc(a)}</th></tr></thead><tbody>${vs.slice().reverse().map(m=>matchRow(m,a)).join("")}</tbody></table></div>`
     :`<p class="empty">${esc(a)} and ${esc(b)} have not played each other${S.disc==="Doubles"?" in doubles":""}.</p>`;
+  html+=winEstHTML(a,b);
   if(S.disc==="Doubles"&&together.length){
     let w=0,l=0; together.forEach(m=>{const s=m[3].includes(a)?1:2; if(m[6]) m[6]===s?w++:l++;});
     html+=`<h3 style="margin-top:24px">As partners: won ${w}, lost ${l}</h3><div class="tablewrap"><table><thead><tr><th>Tournament</th><th>Round</th><th>Partner</th><th>Opponent</th><th>Score</th><th>Result</th></tr></thead><tbody>${together.slice().reverse().map(m=>matchRow(m,a)).join("")}</tbody></table></div>`;
