@@ -408,6 +408,12 @@ h2{font-size:22px} h3{font-size:16.5px}
 #tab-calc .panel{border-top:4px solid var(--cyan)}
 .rvbar{display:inline-flex;width:110px;height:10px;border-radius:5px;overflow:hidden;vertical-align:middle;margin-left:8px;background:#8A97A5}
 .rvbar i{display:block;background:var(--accent)}
+/* type-ahead list (15 Nov 2026): replaces the browser's datalist drop-down, which is see-through and hard to read on phones */
+#acbox{position:fixed;z-index:9999;background:var(--panel);color:var(--ink);border:1px solid var(--rule);border-radius:6px;box-shadow:0 10px 28px rgba(0,0,0,.28);max-height:min(50vh,380px);overflow-y:auto;-webkit-overflow-scrolling:touch}
+#acbox .aci{padding:11px 12px;font-size:15px;line-height:1.25;cursor:pointer;border-bottom:1px solid var(--rule)}
+#acbox .aci:last-child{border-bottom:0}
+#acbox .aci:hover,#acbox .aci.on{background:var(--soft)}
+#acbox .aci b{font-weight:700}
 </style>
 </head>
 <body data-disc="Singles">
@@ -2925,7 +2931,7 @@ function searchItems(){
 }
 function doSearch(v){
   v=v.trim(); if(!v) return; const it=searchItems(), lv=v.toLowerCase();
-  const hit=it.find(x=>x[0].toLowerCase()===lv)||it.find(x=>x[0].toLowerCase().startsWith(lv))||it.find(x=>x[0].toLowerCase().includes(lv));
+  let hit=it.find(x=>x[0].toLowerCase()===lv); if(!hit&&window.acRank){ const b=acRank(it.map(x=>x[0]),v)[0]; hit=it.find(x=>x[0]===b); }
   if(!hit) return;
   $("#gsearch").value=""; $("#gsearch").blur();
   if(hit[1]==="player") openPlayer(hit[2]); else if(hit[1]==="ev"){S.ev=hit[2]; S.evd=""; setTab("tourns");} else {S.se=hit[2]; setTab("seasons");}
@@ -3058,11 +3064,48 @@ $("#rk-add").addEventListener("change",e=>{const n=e.target.value.trim(); if(idx
 $("#rk-mode-pts").addEventListener("click",()=>{S.mode="pts";$("#rk-mode-pts").setAttribute("aria-pressed",true);$("#rk-mode-rank").setAttribute("aria-pressed",false);drawRankChart();});
 $("#rk-mode-rank").addEventListener("click",()=>{S.mode="rank";$("#rk-mode-rank").setAttribute("aria-pressed",true);$("#rk-mode-pts").setAttribute("aria-pressed",false);drawRankChart();});
 $("#pr-q").addEventListener("input",()=>{S.pair=""; renderPairs();});
+/* ---------------- type-ahead (15 Nov 2026) ----------------
+   Every input that used a browser <datalist> gets this list instead: solid background, readable on phones, matches anywhere in
+   the name (first name, surname, part of a word, accents ignored), and a tap or Enter always fires the input's "change" handler. */
+(function(){
+  const box=document.createElement("div"); box.id="acbox"; box.setAttribute("role","listbox"); box.hidden=true; document.body.appendChild(box);
+  let cur=null, items=[], sel=-1;
+  const norm=x=>String(x).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[’']/g,"");
+  const opts=inp=>{ const dl=document.getElementById(inp.dataset.acl); return dl?[...dl.options].map(o=>o.value).filter(Boolean):[]; };
+  function rank(list,q){ q=norm(q).trim(); if(!q) return [];
+    const qs=q.split(/\s+/), out=[];
+    list.forEach(v=>{ const n=norm(v), ws=n.split(/[\s\-&(),]+/).filter(Boolean); let r=-1;
+      if(n===q) r=0; else if(n.startsWith(q)) r=1; else if(ws.some(w=>w.startsWith(q))) r=2;
+      else if(qs.length>1&&qs.every(t=>ws.some(w=>w.startsWith(t)))) r=3; else if(n.includes(q)) r=4;
+      if(r>=0) out.push([r,v]); });
+    return out.sort((a,b)=>a[0]-b[0]||a[1].localeCompare(b[1])).slice(0,15).map(x=>x[1]); }
+  function place(){ if(!cur) return; const r=cur.getBoundingClientRect(), w=Math.min(Math.max(r.width,260),innerWidth-8);
+    box.style.width=w+"px"; box.style.left=Math.max(4,Math.min(r.left,innerWidth-w-4))+"px"; box.style.top=(r.bottom+2)+"px"; }
+  function show(){ items=rank(opts(cur),cur.value); sel=-1; if(!items.length){ box.hidden=true; return; }
+    box.innerHTML=items.map((v,i)=>`<div class="aci" role="option" data-i="${i}">${esc(v)}</div>`).join(""); place(); box.hidden=false; }
+  function pick(v){ if(v==null) return; cur.value=v; box.hidden=true; cur.dispatchEvent(new Event("change",{bubbles:true})); }
+  function attach(inp){ if(inp.dataset.acl) return; inp.dataset.acl=inp.getAttribute("list"); inp.removeAttribute("list"); inp.setAttribute("autocomplete","off"); }
+  const scan=()=>document.querySelectorAll("input[list]").forEach(attach);
+  scan(); new MutationObserver(scan).observe(document.body,{childList:true,subtree:true});
+  document.addEventListener("input",e=>{ const t=e.target; if(t&&t.dataset&&t.dataset.acl){ cur=t; show(); } });
+  document.addEventListener("focusin",e=>{ const t=e.target; if(t&&t.dataset&&t.dataset.acl){ cur=t; if(t.value.trim()) show(); } });
+  document.addEventListener("keydown",e=>{ const t=e.target; if(!t||!t.dataset||!t.dataset.acl||box.hidden) return;
+    if(e.key==="ArrowDown"||e.key==="ArrowUp"){ e.preventDefault(); sel=(sel+(e.key==="ArrowDown"?1:-1)+items.length)%items.length;
+      [...box.children].forEach((c,i)=>c.classList.toggle("on",i===sel)); box.children[sel].scrollIntoView({block:"nearest"}); }
+    else if(e.key==="Enter"){ e.preventDefault(); e.stopImmediatePropagation(); pick(items[sel>=0?sel:0]); }
+    else if(e.key==="Escape"){ box.hidden=true; } },true);
+  box.addEventListener("pointerdown",e=>{ const d=e.target.closest(".aci"); if(!d) return; e.preventDefault(); pick(items[+d.dataset.i]); if(cur!==document.getElementById("gsearch")) cur.blur(); });
+  document.addEventListener("pointerdown",e=>{ if(!box.hidden&&e.target!==cur&&!box.contains(e.target)) box.hidden=true; });
+  addEventListener("resize",place); addEventListener("scroll",()=>{ if(!box.hidden) place(); },true);
+  window.acRank=rank;   // also used to make sense of a name typed without picking from the list
+})();
 $("#gsearch").addEventListener("change",e=>doSearch(e.target.value));
 $("#gsearch").addEventListener("keydown",e=>{ if(e.key==="Enter") doSearch(e.target.value); });
 $("#se-pick").addEventListener("change",e=>{S.se=e.target.value; renderSeasons(); writeHash();});
 $("#tv-ev").addEventListener("change",e=>{S.ev=e.target.value; S.evd=""; renderTourns(); writeHash();});
-$("#pl-pick").addEventListener("change",e=>{S.player=e.target.value.trim(); renderPlayer(); writeHash();});
+$("#pl-pick").addEventListener("change",e=>{ let v=e.target.value.trim(); const dl=[...document.querySelectorAll("#names option")].map(o=>o.value);
+  if(v&&!dl.includes(v)&&window.acRank){ const b=acRank(dl,v)[0]; if(b){ v=b; e.target.value=b; } }
+  S.player=v; renderPlayer(); writeHash();});
 $("#h2h-a").addEventListener("change",e=>{S.a=e.target.value.trim(); renderH2H(); writeHash();});
 $("#h2h-b").addEventListener("change",e=>{S.b=e.target.value.trim(); renderH2H(); writeHash();});
 $("#h2h-swap").addEventListener("click",()=>{[S.a,S.b]=[S.b,S.a]; renderH2H(); writeHash();});
