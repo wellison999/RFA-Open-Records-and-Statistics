@@ -2130,12 +2130,12 @@ function renderWinch(){
     const same=[]; W.forEach(r=>r[1].forEach(n=>{ if(L.some(t=>t[0]==="National Doubles"&&t[2]===r[0]&&t[3].includes(n))) same.push({n,se:r[0]}); }));
     h=`<div class="recs" style="margin-top:12px">`+
       miniCard("Most Barnes Bridge titles","",["Player","r:Titles"],Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,12).map(([n,k])=>trow([TIP(n),[k]])))+
-      miniCard("Most successful pairs","",["Pair","r:Titles","Seasons"],Object.entries(pairs).sort((a,b)=>b[1].length-a[1].length).slice(0,10).map(([k,ss])=>trow([ppl(k.split(" & ")),[ss.length],`<span class="muted">${esc(ss[0])}–${esc(ss[ss.length-1])}</span>`])))+
-      miniCard("Longest winning runs","Consecutive Barnes Bridges won (2021 wasn't held).",["Player","r:In a row","Seasons"],runs.sort((a,b)=>b.run-a.run).slice(0,10).map(o=>trow([TIP(o.n),[o.run],`<span class="muted">${esc(o.from)}–${esc(o.to)}</span>`])))+
+      miniCard("Most successful pairs","",["Pair","r:Titles","Seasons"],Object.entries(pairs).sort((a,b)=>b[1].length-a[1].length).slice(0,10).map(([k,ss])=>trow([ppl(k.split(" & ")),[ss.length],`<span class="muted">${ss.map(x=>WBL(x,esc(x))).join(", ")}</span>`])))+
+      miniCard("Longest winning runs","Consecutive Barnes Bridges won (2021 wasn't held).",["Player","r:In a row","Seasons"],runs.sort((a,b)=>b.run-a.run).slice(0,10).map(o=>trow([TIP(o.n),[o.run],`<span class="muted">${WBL(o.from,esc(o.from))}–${WBL(o.to,esc(o.to))}</span>`])))+
       miniCard("Most finals","Runners-up are only known for some years.",["Player","r:Finals","r:Won"],Object.entries(fin).sort((a,b)=>b[1].f-a[1].f||b[1].w-a[1].w).slice(0,10).map(([n,o])=>trow([TIP(n),[o.f],[o.w]])))+
       miniCard("Most title-winning partners","",["Player","r:Partners"],Object.entries(partners).sort((a,b)=>b[1].size-a[1].size).slice(0,8).map(([n,st])=>trow([TIP(n),[st.size]])))+
       miniCard("Two-code champions","Barnes Bridge winners who have also won Rugby Fives open titles.",["Player","r:Barnes Bridge","r:Rugby titles","r:National Doubles"],two.map(o=>trow([TIP(o.n),[o.b],[o.r],[o.nd]])))+
-      miniCard("Same-season national doubles","Won the Rugby Fives National Doubles and the Barnes Bridge in the same season.",["Player","Season"],same.map(o=>trow([TIP(o.n),esc(o.se)])),false)+`</div>`;
+      miniCard("Same-season national doubles","Won the Rugby Fives National Doubles and the Barnes Bridge in the same season.",["Player","Season"],same.map(o=>trow([TIP(o.n),WBL(o.se,esc(o.se))])),false)+`</div>`;
   }
   $("#wi-body").innerHTML=h;
 }
@@ -2158,12 +2158,12 @@ function winchGroupsHTML(se,p){    // group tables from the season report (posit
 function openWinch(se,p){
   const ms=winchMs(se), title=(TT().winch||[]).find(r=>r[0]===se), vn=venueEv("Winchester Doubles",se), srcs=new Set((TT().winchMatches||[]).filter(m=>m[0]===se).map(m=>m[7]));
   const line=m=>{ const me=p&&(m[3].includes(p)||m[4].includes(p));
-    return `<tr class="${me?"me":""}"><td><b>${esc(m[3].join(" & "))}</b> <span class="muted">bt</span> ${esc(m[4].join(" & "))}</td><td>${m[5]?esc(m[5]):NSc(m)}</td><td class="muted"></td></tr>`; };
+    return `<tr class="${me?"me":""}"><td><b>${ppl(m[3])}</b> <span class="muted">bt</span> ${ppl(m[4])}</td><td>${m[5]?esc(m[5]):NSc(m)}</td><td class="muted"></td></tr>`; };
   const grp=draw=>{ const by={}; ms.filter(m=>m[1]===draw).forEach(m=>(by[m[2]]=by[m[2]]||[]).push(m));
     return Object.keys(by).sort((a,b)=>(WRD.indexOf(a)+99*(WRD.indexOf(a)<0))-(WRD.indexOf(b)+99*(WRD.indexOf(b)<0))).map(k=>`<h4>${WDRAW[draw]||""}${esc(WRN[k]||k)}</h4><table class="tdt"><colgroup><col class="c1"><col class="c2"><col class="c3"></colgroup><tbody>${by[k].map(line).join("")}</tbody></table>`).join(""); };
   $("#tdlg-title").innerHTML=`Barnes Bridge ${esc(se)} – Winchester Fives${vn?` <span style="font-size:15px;font-weight:400">${vTag(vn)}</span>`:""}`;
   const brk=bracketHTML(ms,p), dv=!!brk;
-  const head=title?`<p class="sub" style="margin:0 0 10px"><b>${ppl(title[1])}</b>${title[2].length?` beat ${ppl(title[2])} in the final`:" won"}.</p>`:"";
+  const head=`<p class="sub" style="margin:0 0 10px">${title?`<b>${ppl(title[1])}</b>${title[2].length?` beat ${ppl(title[2])} in the final`:" won"}. `:""}<a href="#" data-season="${esc(se)}">Season ${esc(se)} ›</a> · <a href="#" data-tab="winch">Winchester Fives ›</a></p>`;
   const src=[srcs.has("season report")?"the RFA season report":"",srcs.has("news report")?"the RFA news report":"",srcs.has("results record")?"Will Ellison's results record":""].filter(Boolean);
   $("#tdlg-body").innerHTML=head+(brk?`<div class="row subtabs" style="margin-bottom:10px"><button class="btn" data-tdv="list" aria-pressed="${!dv}">Results</button><button class="btn" data-tdv="draw" aria-pressed="${!!dv}">Draw</button></div><div id="td-draw"${dv?"":" hidden"}>${brk}${winchGroupsHTML(se,p)}</div>`:"")+`<div id="td-list"${dv?" hidden":""}>`+
     (ms.length?["M","P","P2","P3"].map(grp).join(""):`<p class="empty">No match results recorded for this season.</p>`)+winchGroupsHTML(se,p)+`</div>`+
@@ -3024,6 +3024,7 @@ function eloHonourLine(p){
 /* ---------------- events ---------------- */
 function openPlayer(n,sec){S.player=n; setTab("player"); const el=sec&&document.getElementById(sec); if(el) el.scrollIntoView({block:"start"}); else window.scrollTo(0,0);}
 document.addEventListener("click",e=>{
+  if(e.target.closest("#tdlg [data-open],#tdlg [data-season],#tdlg [data-tab]")){ const d=$("#tdlg"); if(d.close) d.close(); else d.removeAttribute("open"); }
   const tc=e.target.closest("[data-tourn]");
   if(tc){e.preventDefault(); const [d,t]=tc.dataset.tourn.split("|"); return openTourn(d,+t,S.tab==="player"?S.player:"");}
   const wd=e.target.closest("[data-wdv]"); if(wd){e.preventDefault(); S.wdv=wd.dataset.wdv; return renderWinch();}
