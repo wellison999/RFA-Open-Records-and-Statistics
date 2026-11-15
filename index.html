@@ -2116,7 +2116,7 @@ function renderWinch(){
     h=(title?`<p class="sub" style="margin-top:12px">Barnes Bridge ${esc(S.wse)}${venueEv("Winchester Doubles",S.wse)?` ${vTag(venueEv("Winchester Doubles",S.wse))}`:""}: <b>${ppl(title[1])}</b>${title[2].length?` beat ${ppl(title[2])} in the final`:""}.${dv?"":" The champions' matches are highlighted."}</p>`:"")+
       (brk?`<div class="row subtabs" style="margin:4px 0 10px"><button class="btn" data-wdv="list" aria-pressed="${!dv}">Results</button><button class="btn" data-wdv="draw" aria-pressed="${dv}">Draw</button></div>`:"")+
       (dv?`<div class="tablewrap" style="max-height:none;overflow-x:auto">${brk}</div>`+(ms.some(m=>m[1]!=="M")?`<p class="sub" style="margin-top:10px">Plate results are under <a href="#" data-wdv="list">Results</a>.</p>`:"")+winchGroupsHTML(S.wse,"")
-         :winchGroupsHTML(S.wse,"")+(ms.length?`<div class="tablewrap" style="max-height:none"><table><tbody>${ms.slice().sort((a,b)=>ord(a)-ord(b)).map(row).join("")}</tbody></table></div>`:`<p class="empty">No match results recorded for this season.</p>`))+
+         :(ms.length?`<div class="tablewrap" style="max-height:none"><table><tbody>${ms.slice().sort((a,b)=>ord(a)-ord(b)).map(row).join("")}</tbody></table></div>`:`<p class="empty">No match results recorded for this season.</p>`)+winchGroupsHTML(S.wse,""))+
       `<p class="caveat" style="margin-top:12px">From the RFA season reports up to 2018/19, the RFA's news reports from 2019/20, and Will Ellison's results record; each match is listed once. Older reports often miss early rounds, group matches and plate details. Names given only as initials are matched to players known elsewhere where that's unambiguous.</p>`;
   } else {
     const c={}, fin={}, pairs={}, partners={};
@@ -2151,7 +2151,7 @@ function winchMs(se){       // the season's matches in the same shape as open-to
 function winchGroupsHTML(se,p){    // group tables from the season report (positions, wins, points), where printed
   const G=(TT().winchGroups||[]).filter(g=>g[0]===se); if(!G.length) return "";
   const names=[...new Set(G.map(g=>g[1]))], full=G.some(g=>g[2]!=null);
-  return `<h4>Groups</h4><div class="recs" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr));margin-bottom:8px">`+names.map(n=>{ const rows=G.filter(g=>g[1]===n);
+  return `<h4 style="margin-top:16px">Groups</h4><div class="recs" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr));margin-bottom:8px">`+names.map(n=>{ const rows=G.filter(g=>g[1]===n);
     return `<div class="tablewrap" style="max-height:none"><table><thead><tr>${full?'<th class="r">#</th>':""}<th>Group ${esc(n)}</th>${full?'<th class="r">W</th><th class="r">Pts</th>':""}</tr></thead><tbody>${rows.map(g=>`<tr${p&&g[3].includes(p)?' class="me"':""}>${full?`<td class="r">${g[2]??""}</td>`:""}<td>${ppl(g[3])}</td>${full?`<td class="r">${g[4]??""}</td><td class="r">${g[5]??""}</td>`:""}</tr>`).join("")}</tbody></table></div>`; }).join("")+
     `</div>${full?"":`<p class="sub" style="margin:0 0 8px">The report lists each group's pairs but not the final positions.</p>`}`;
 }
@@ -2166,7 +2166,7 @@ function openWinch(se,p){
   const head=title?`<p class="sub" style="margin:0 0 10px"><b>${ppl(title[1])}</b>${title[2].length?` beat ${ppl(title[2])} in the final`:" won"}.</p>`:"";
   const src=[srcs.has("season report")?"the RFA season report":"",srcs.has("news report")?"the RFA news report":"",srcs.has("results record")?"Will Ellison's results record":""].filter(Boolean);
   $("#tdlg-body").innerHTML=head+(brk?`<div class="row subtabs" style="margin-bottom:10px"><button class="btn" data-tdv="list" aria-pressed="${!dv}">Results</button><button class="btn" data-tdv="draw" aria-pressed="${!!dv}">Draw</button></div><div id="td-draw"${dv?"":" hidden"}>${brk}${winchGroupsHTML(se,p)}</div>`:"")+`<div id="td-list"${dv?" hidden":""}>`+
-    winchGroupsHTML(se,p)+(ms.length?["M","P","P2","P3"].map(grp).join(""):`<p class="empty">No match results recorded for this season.</p>`)+`</div>`+
+    (ms.length?["M","P","P2","P3"].map(grp).join(""):`<p class="empty">No match results recorded for this season.</p>`)+winchGroupsHTML(se,p)+`</div>`+
     `<p class="caveat" style="margin-top:14px">Winchester Fives national doubles – not counted in the rankings, open titles or head-to-heads. Results from ${src.join(" and ")||"the RFA's records"}${se<"2019/20"?"; older reports often miss early rounds and plates, and the draw is shown only where the knockout rounds are complete":""}.${p?` Matches involving ${esc(p)} are highlighted.`:""}</p>`;
   const d=$("#tdlg"); if(d.showModal) d.showModal(); else d.setAttribute("open","");
 }
