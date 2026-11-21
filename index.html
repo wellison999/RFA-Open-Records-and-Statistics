@@ -169,6 +169,9 @@ canvas{max-width:100%}
 .r-QF{background:color-mix(in srgb,var(--accent) 10%,transparent);border-radius:4px}
 .r-A{color:var(--muted)} .r-x{color:color-mix(in srgb,var(--muted) 45%,transparent)}
 .tl td.c{padding:3px 2px} .tl td.c span{display:inline-block;min-width:30px;padding:3px 4px}
+.tl tr.natrow td.t{background:color-mix(in srgb,#C9A227 12%,var(--card))}
+.tl .r-W.nat{background:#B8860B;color:#fff} .tl .r-F.nat{background:color-mix(in srgb,#C9A227 45%,transparent)} .tl .r-SF.nat{background:color-mix(in srgb,#C9A227 22%,transparent)} .tl .r-QF.nat{background:color-mix(in srgb,#C9A227 10%,transparent)}
+.tl .natT{color:#B8860B;font-weight:700}
 .tl-key{font-size:12.5px;color:var(--muted);margin:4px 0 0}
 .tl-key span{display:inline-block;padding:1px 6px;margin:0 4px 0 10px}
 /* h2h */
@@ -1269,8 +1272,8 @@ function openTourn(disc,t,p){
 }
 
 /* ---------------- results timeline (open tournaments, main draw) ---------------- */
-const TL_ORDER={Singles:["South West","South East","London","Yorkshire","West","National Singles","North West","North","Scotland"],
-                Doubles:["South West","London","Yorkshire","West","North West","North","Scotland","National Doubles"]};   // South East doubles is a drawn-partners event
+const TL_ORDER={Singles:["National Singles","South West","South East","London","Yorkshire","West","North West","North","Scotland"],
+                Doubles:["National Doubles","South West","London","Yorkshire","West","North West","North","Scotland"]};   // Nationals first (Will, 21 Nov 2026)   // South East doubles is a drawn-partners event
 const TL_LABEL={"South West":"South West Open","South East":"South East Open","London":"London Open","Yorkshire":"Yorkshire Open",
   "West":"West of England","North West":"North West Open","North":"North of England","Scotland":"Scottish Open"};
 const RD_DEPTH={F:1,SF:2,QF:3,R16:4,R32:5,R64:6,R128:7,RR:9};
@@ -1303,7 +1306,7 @@ function timelineHTML(p,only,part){
   const mine=[...all].sort(), first=mine[0], lastS=mine[mine.length-1], cols=allS.filter(s=>s>=first&&s<=lastS);
   const short=s=>s.slice(2,4)+"/"+s.slice(5);
   let html=`<h3 style="margin-top:26px">Results timeline</h3>
-   <p class="sub">Best ${only?only.toLowerCase()+" ":""}result in each season at the open tournaments (main draw only – no plates, qualifiers or closed events). A = didn't enter; · = not held that season (or no results recorded). Click any result to see the whole tournament.</p>`;
+   <p class="sub">Best ${only?only.toLowerCase()+" ":""}result in each season at the open tournaments (main draw only – no plates, qualifiers or closed events). A = didn't enter; · = not held that season (or no results recorded). National results are in gold. Click any result to see the whole tournament.</p>`;
   const tot={T:0,F:0,SF:0,E:0};
   both.forEach(({d,data})=>{
     if(!data) return;
@@ -1318,14 +1321,14 @@ function timelineHTML(p,only,part){
         if(!data.held[k]) return `<td class="c"><span class="r-x">·</span></td>`;
         if(!r) return `<td class="c" data-tourn="${d}|${data.held[k][0]}" title="${esc((TL_LABEL[n]||n)+" "+sl)} – click for results"><span class="r-A">A</span></td>`;
         E++; if(r.lab==="W")T++; if(r.lab==="W"||r.lab==="F")F++; if(["W","F","SF"].includes(r.lab))SF++;
-        const cls=["W","F","SF","QF"].includes(r.lab)?"r-"+r.lab:"";
+        const cls=["W","F","SF","QF"].includes(r.lab)?"r-"+r.lab+(isNat(n)?" nat":""):"";
         return `<td class="c" data-tourn="${d}|${r.t}" title="${esc((TL_LABEL[n]||n)+" "+sl)} – click for results"><span class="${cls}">${r.lab}</span></td>`;}).join("");
-      foot.T+=T;foot.F+=F;foot.SF+=SF;foot.E+=E;
-      html+=`<tr><td class="t">${esc(TL_LABEL[n]||n)}</td>${cells}<td class="tot">${T}</td><td>${F}</td><td>${SF}</td><td>${E}</td>
+      foot.T+=T;foot.F+=F;foot.SF+=SF;foot.E+=E; if(isNat(n)) foot.N=T;
+      html+=`<tr${isNat(n)?' class="natrow"':""}><td class="t">${isNat(n)?svg("trophy","#B8860B",14)+" <b>"+esc(n)+"</b>":esc(TL_LABEL[n]||n)}</td>${cells}<td class="tot">${isNat(n)&&T?`<span class="natT">${T}</span>`:T}</td><td>${F}</td><td>${SF}</td><td>${E}</td>
         <td>${E?Math.round(100*T/E)+"%":"–"}</td><td>${F?Math.round(100*T/F)+"%":"–"}</td></tr>`;
     });
     ["T","F","SF","E"].forEach(k=>tot[k]+=foot[k]);
-    html+=`</tbody><tfoot><tr><td class="t">${d} total</td>${cols.map(()=>"<td></td>").join("")}<td class="tot">${foot.T}</td><td>${foot.F}</td><td>${foot.SF}</td><td>${foot.E}</td>
+    html+=`</tbody><tfoot><tr><td class="t">${d} total</td>${cols.map(()=>"<td></td>").join("")}<td class="tot">${foot.T}${foot.N?` <span class="natT" title="National titles">(${foot.N})</span>`:""}</td><td>${foot.F}</td><td>${foot.SF}</td><td>${foot.E}</td>
       <td>${foot.E?Math.round(100*foot.T/foot.E)+"%":"–"}</td><td>${foot.F?Math.round(100*foot.T/foot.F)+"%":"–"}</td></tr></tfoot></table></div>`;
   });
   // season statistics
