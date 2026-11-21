@@ -158,8 +158,8 @@ canvas{max-width:100%}
 .tl-wrap{overflow-x:auto;margin:6px 0 4px;border:1px solid var(--line);border-radius:10px}
 .tl{border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-nums;min-width:100%}
 .tl th,.tl td{padding:6px 7px;text-align:center;white-space:nowrap;border-bottom:1px solid var(--line);font-size:13.5px}
-.tl thead th{font:600 12px Barlow,sans-serif;color:var(--muted);background:var(--card)}
-.tl .t{text-align:left;position:sticky;left:0;background:var(--card);z-index:1;font-weight:600;padding-left:12px;min-width:150px}
+.tl thead th{font:600 12px Barlow,sans-serif;color:var(--muted);background:var(--panel)}
+.tl .t{text-align:left;position:sticky;left:0;background:var(--panel);z-index:1;font-weight:600;padding-left:12px;min-width:150px}
 .tl .tot{border-left:2px solid var(--line);font-weight:600}
 .tl tr:last-child td{border-bottom:0}
 .tl tfoot td{font-weight:700;background:color-mix(in srgb,var(--accent) 5%,transparent)}
@@ -169,7 +169,8 @@ canvas{max-width:100%}
 .r-QF{background:color-mix(in srgb,var(--accent) 10%,transparent);border-radius:4px}
 .r-A{color:var(--muted)} .r-x{color:color-mix(in srgb,var(--muted) 45%,transparent)}
 .tl td.c{padding:3px 2px} .tl td.c span{display:inline-block;min-width:30px;padding:3px 4px}
-.tl tr.natrow td.t{background:color-mix(in srgb,#C9A227 12%,var(--card))}
+.tl thead th.t{z-index:4;left:0}
+.tl tr.natrow td.t{background:color-mix(in srgb,#C9A227 12%,var(--panel))}
 .tl .r-W.nat{background:#B8860B;color:#fff} .tl .r-F.nat{background:color-mix(in srgb,#C9A227 45%,transparent)} .tl .r-SF.nat{background:color-mix(in srgb,#C9A227 22%,transparent)} .tl .r-QF.nat{background:color-mix(in srgb,#C9A227 10%,transparent)}
 .tl .natT{color:#B8860B;font-weight:700}
 .tl-key{font-size:12.5px;color:var(--muted);margin:4px 0 0}
@@ -384,7 +385,7 @@ h2{font-size:22px} h3{font-size:16.5px}
 .pidx button:hover{border-color:var(--accent);color:var(--accent)}
 #elo-main[hidden],#elo-honp[hidden],#td-list[hidden],#td-draw[hidden]{display:none!important}
 .brk{display:flex;gap:16px;overflow:auto;padding:0 2px 12px;align-items:stretch;max-height:calc(100vh - 250px);overscroll-behavior:contain}   /* the draw scrolls inside its own box, so the left/right bar is always on screen */
-.brk .bcol h4{position:sticky;top:0;z-index:2;background:var(--card);padding:6px 0 4px}
+.brk .bcol h4{position:sticky;top:0;z-index:2;background:var(--panel);padding:6px 0 4px}
 .brk .bcol{display:flex;flex-direction:column;min-width:150px;flex:1 1 170px}
 .brk .bcol h4{margin:0 0 6px;font:600 13px Poppins,Barlow,sans-serif;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
 .brk .bslots{display:flex;flex-direction:column;flex:1;gap:8px}
@@ -1338,7 +1339,7 @@ function timelineHTML(p,only,part){
     const rowsDef=[["Titles","T"],["Finals","F"],["Wins","W"],["Losses","L"],["Win %","%"]];
     let sum={T:0,F:0,W:0,L:0};
     const vals=cols.map(sl=>{const v=get(sl); ["T","F","W","L"].forEach(k=>sum[k]+=v[k]); return v;});
-    return `<tr><td class="t" colspan="${cols.length+2}" style="background:color-mix(in srgb,var(--accent) 6%,transparent)">${name}</td></tr>`+
+    return `<tr><td colspan="${cols.length+2}" style="text-align:left;font-weight:600;background:color-mix(in srgb,var(--accent) 6%,var(--panel))"><span style="position:sticky;left:12px">${name}</span></td></tr>`+
       rowsDef.map(([lab,k])=>`<tr><td class="t" style="font-weight:500">${lab}</td>${vals.map(v=>{
           if(k==="%") return v.W+v.L?`<td><span class="st-win" style="${pctStyle(v.W,v.L)}">${Math.round(100*v.W/(v.W+v.L))}%</span></td>`:`<td class="zero">–</td>`;
           const x=v[k]; if(!x) return `<td class="zero">${v.W+v.L||v.T||v.F?0:"–"}</td>`;
