@@ -2163,7 +2163,7 @@ function renderAchieve(){
   document.querySelectorAll("[data-acv]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.acv===v));
   const keys=v==="all"?Object.keys(ACH_PTS):[...VKEYS[v],...RUNK];
   const items=v==="all"?I.list.map(a=>({a,c:a.c,pts:a.pts,tier:a.tier,rank:a.rank})):V.list;
-  $("#ac-legend").innerHTML=`<div class="tiers">${V.tiers.slice(0,-1).map(t=>`<span class="tier">${svg(t.icon,t.col,26)}<b>${t.name}</b><span class="muted">${isFinite(t.min)?`${t.min}+ pts · ${items.filter(o=>o.tier===t).length}`:"nobody yet"}</span></span>`).join("")}</div>
+  $("#ac-legend").innerHTML=`<div class="tiers">${V.tiers.map(t=>`<span class="tier">${svg(t.icon,t.col,26)}<b>${t.name}</b><span class="muted">${isFinite(t.min)?`${t.min||1}+ pts · ${items.filter(o=>o.tier===t).length}`:"nobody yet"}</span></span>`).join("")}</div>
     ${v!=="all"?`<p class="sub" style="margin-top:8px">${v==="S"?"Singles":"Doubles"} achievements only${v==="D"?" (including the Barnes Bridge)":""}. The points are the same as overall; ${VNAME[v]}GOAT is ${VFIX[v].goat.toLocaleString()}+ points${V.list.some(o=>o.pts>=VFIX[v].goat)?"":" (nobody yet)"}, Titan ${VFIX[v].titan.toLocaleString()}+, Legend ${VFIX[v].gem}+, Grandmaster ${VFIX[v].crown}+, Master ${VFIX[v].laurel}+, Champion ${VFIX[v].trophy}+, Expert ${VFIX[v].star}+, Contender ${VFIX[v].shield}+ and Challenger ${VFIX[v].glove}+.</p>`:""}
     <details style="margin:10px 0 0"><summary class="muted" style="cursor:pointer">How points are scored, and the badges</summary>
      <div class="ach-help"><table><tbody>${keys.map(k=>`<tr><td>${ACH_LABEL[k]}</td><td class="r"><b>${ACH_PTS[k]}</b></td></tr>`).join("")}</tbody></table>
