@@ -2025,7 +2025,7 @@ const ACH_LABEL={nsW:"National Singles titles",nsF:"National Singles finals lost
   nat3:"National title run reaching 3 in a row",nat5:"National title run reaching 5 in a row",nat10:"National title run reaching 10 in a row",nat15:"National title run reaching 15 in a row",
   reg5:"Regional title run reaching 5 in a row (same tournament)",reg10:"Regional run reaching 10 in a row",reg15:"Regional run reaching 15 in a row",reg20:"Regional run reaching 20 in a row",
   dbl:"National Singles and Doubles in the same season",wW:"Barnes Bridge titles (Winchester Fives national doubles)",wF:"Barnes Bridge finals lost"};
-const TIERS=[{name:"GOAT",min:4000,col:"#C0392B",icon:"goat",note:"Greatest of all time"},{name:"Titan",min:2500,col:"#0B6E8A",icon:"titan",note:"Between Legend and GOAT"},{name:"Legend",min:1500,col:"#5B3FB5",icon:"gem",note:"Among the very greatest"},{name:"Grandmaster",min:550,col:"#B8860B",icon:"crown"},{name:"Master",min:250,col:"#7A1F5C",icon:"laurel"},
+const TIERS=[{name:"GOAT",min:4000,col:"#C0392B",icon:"goat",note:"Greatest of all time"},{name:"Legend",min:2000,col:"#0B6E8A",icon:"titan",note:"A super-exceptional career, short of GOAT"},{name:"All-time great",min:1500,col:"#5B3FB5",icon:"gem",note:"Among the very greatest"},{name:"Grandmaster",min:550,col:"#B8860B",icon:"crown"},{name:"Master",min:250,col:"#7A1F5C",icon:"laurel"},
   {name:"Champion",min:120,col:"#1F4F8A",icon:"trophy"},{name:"Expert",min:60,col:"#2B7A5B",icon:"star"},{name:"Contender",min:25,col:"#8B5A2B",icon:"shield"},
   {name:"Challenger",min:10,col:"#6B7280",icon:"glove"},{name:"Competitor",min:0,col:"#9AA3AD",icon:"ball"}];
 const ICON={
@@ -2088,7 +2088,7 @@ const tierBadge=t=>svg(t.icon,t.col,22);
 const badgeIcon=b=>`<span title="${esc(b.name)}" style="margin-left:3px">${svg(b.id,b.col,18)}</span>`;
 const badgeStrip=bs=>{const o=[...bs].sort((x,y)=>y.lv-x.lv), n=6; return o.slice(0,n).map(badgeIcon).join("")+(o.length>n?`<span class="bmore" title="${esc(o.slice(n).map(b=>b.name).join(" · "))}">+${o.length-n}</span>`:"");};
 let AIX=null;
-// Titan: the best player below GOAT level, if they are at least 25% clear of everyone else (otherwise nobody)
+// (unused) the best player below GOAT level, if they are at least 25% clear of everyone else (otherwise nobody)
 function titanMin(pts,goatMin){ const rest=pts.filter(x=>x<goatMin); if(!(rest.length>1&&rest[0]>=1.25*rest[1])) return Infinity;
   for(const step of [500,250,100,50]){ const m=Math.floor(rest[0]/step)*step; if(m>rest[1]) return m; }   // a round line between Titan and the next player
   return rest[0]; }
@@ -2140,7 +2140,7 @@ function achieveIndex(){
   list.forEach(a=>a.tier=TIERS.find(t=>a.pts>=t.min));
   list.forEach((a,i)=>a.rank=i+1);
   // singles-only and doubles-only boards: same points; the tier lines are set so each tier holds about as many players as it does
-  // overall (so a Singles Legend is as exclusive as a Legend). GOAT, Titan and every tier line are fixed round numbers (VFIX).
+  // overall (so a Singles Legend is as exclusive as a Legend). GOAT, Legend (was Titan) and every tier line are fixed round numbers (VFIX).
   const views={all:{list,tiers:TIERS}};
   const cum=TIERS.map((t,i)=>list.filter(a=>TIERS.indexOf(a.tier)<=i).length);
   ["S","D"].forEach(v=>{
@@ -2152,7 +2152,7 @@ function achieveIndex(){
       else if(t.min===0) min=0;
       else { const k=Math.min(vl.length,cum[i]); min=k?vl[k-1].pts:1; }
       return {...t,min,name:VNAME[v]+t.name}; });
-    // fixed round lines for every tier below GOAT, including Titan between Legend and GOAT (singles and doubles boards only)
+    // fixed round lines for every tier below GOAT, including Legend between All-time great and GOAT (singles and doubles boards only)
     const FIX=VFIX[v]; tiers.forEach(t=>{ if(FIX[t.icon]!=null) t.min=FIX[t.icon]; });
     for(let i=tiers.length-2;i>1;i--) if(tiers[i].min<=tiers[i+1].min&&isFinite(tiers[i].min)) tiers[i+1].min=Math.max(0,tiers[i].min-1);   // keep the lines strictly in order
     vl.forEach(o=>o.tier=tiers.find(t=>o.pts>=t.min));
