@@ -824,6 +824,30 @@ const isWO=m=>m[7]==="walkover"||(m[7]==="w/o or retired"&&!m[5]);   // walkover
 const hOK=(disc,m)=>mOK(disc,m)&&!isWO(m);   // head-to-head records: as mOK, but matches that never started are left out
 const EV_MONTH=[[/^South West/,7.5],[/^South East/,9],[/^London/,9.5],[/^Yorkshire/,10.3],[/^West/,10.6],[/^University/,11.3],[/^Nationals Qualifier/,11],
   [/^Challenger/,11.5],[/^National Singles/,12.2],[/^North West/,1.5],[/^U25/,2.3],[/^North/,2.6],[/^National Doubles/,3.5],[/^Scotland/,5]];
+/* Tournaments are shown by the calendar year they were played (Will, 21 Nov 2026); seasons stay for rankings, the Seasons page,
+   season streaks/badges and Barnes Bridge. The year comes from the event's name (the database label); U25 follows its real month
+   (February until 2023/24, November from 2024/25), and when an event falls twice in one calendar year the month is added. */
+const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const evMon=(ev,se)=>{ const y0=+String(se).slice(0,4);
+  if(/^U25/.test(ev)&&y0>=2024) return 10.5;
+  if(/^National Singles/.test(ev)&&y0<=1981) return 1;   // held in January until 1982, December from 1982 (RFA archive: "1982/1", "1982/12")
+  return (EV_MONTH.find(([rx])=>rx.test(ev))||[0,6.5])[1]; };
+const monthYear=(ev,se)=>{ const y0=+String(se).slice(0,4); return evMon(ev,se)>=7?y0:y0+1; };
+const TYIDX={};
+(()=>{ ["Singles","Doubles"].forEach(d=>{ const X=DATA.disc[d]; if(!X||!X.tinfo) return;
+  const old=X.tournaments.slice(), yr=X.tinfo.map(([ev,se],i)=>{ const m=/(\d{4})\s*$/.exec(old[i]||""); return /^U25/.test(ev)||!m?monthYear(ev,se):+m[1]; });
+  const cnt={}; X.tinfo.forEach(([ev],i)=>{ const k=ev+"|"+yr[i]; cnt[k]=(cnt[k]||0)+1; });
+  const nm=X.tinfo.map(([ev,se],i)=>{ const base=(old[i]||ev).replace(/\s*\d{4}\s*$/,""); return base+" "+yr[i]+(cnt[ev+"|"+yr[i]]>1?" ("+MON[Math.round(evMon(ev,se))-1]+")":""); });
+  // Elo labels are the old names (a repeat carries " (2)"): map them to the new ones so charts still line up
+  const seen={}, map={}; old.forEach((n,i)=>{ seen[n]=(seen[n]||0)+1; map[seen[n]>1?n+" ("+seen[n]+")":n]=nm[i]; });
+  if(X.elo&&X.elo.labels) X.elo.labels=X.elo.labels.map(l=>map[l]||l);
+  X.tournaments=nm; X.tyear=yr; X.tinfo.forEach(([ev,se],i)=>{ TYIDX[d+"|"+ev+"|"+se]=yr[i]; }); }); })();
+const tYear=(disc,t)=>(DATA.disc[disc].tyear||[])[t];
+const evYear0=(ev,se,disc)=>{ for(const d of [disc,"Singles","Doubles"]){ const y=TYIDX[d+"|"+ev+"|"+se]; if(y!=null) return y; } return monthYear(ev,se); };
+const seShift=(se,k)=>{ const y=+String(se).slice(0,4)+k; return y+"/"+String(y+1).slice(2); };
+const evYear=(ev,se,disc)=>{ const y=evYear0(ev,se,disc);   // the year, plus the month when the event was held twice that year
+  return (evYear0(ev,seShift(se,-1),disc)===y||evYear0(ev,seShift(se,1),disc)===y)?`${y} (${MON[Math.round(evMon(ev,se))-1]})`:y; };
+const rYear=r=>evYear(r[0],r[2],r[1]);      // a titles / plates row: [event, discipline, season, ...]
 function tX(disc,t){            // tournament index -> decimal year, using each event's usual month (seasons run July-June)
   const X=DATA.disc[disc];
   if(!X._sx){ X._sx={}; const used={};
@@ -1731,8 +1755,8 @@ function renderTitles(){
       <div class="stat"><div class="num">${o.S}</div><div class="muted">singles</div></div><div class="stat"><div class="num">${o.D}</div><div class="muted">doubles (ex. Winchester)</div></div>
       <div class="stat"><div class="num">${o.NS+o.ND}</div><div class="muted">National titles</div></div></div>`;}
     h+=`<p class="sub" style="margin-top:10px">${rows.length} title${rows.length===1?"":"s"}${q?` involving “${esc(S.tq)}” (as winner or runner-up; highlighted rows are wins)`:""}.</p>
-     <div class="tablewrap"><table><thead><tr><th>Season</th><th>Tournament</th><th></th><th>Winner(s)</th><th>Runner(s)-up</th></tr></thead><tbody>`+
-     rows.slice(0,600).map(r=>`<tr${q&&r[3].some(n=>n.toLowerCase().includes(q))?' class="sel"':(isNat(r[0])?' class="natrow"':"")}><td>${esc(r[2])}</td><td>${isNat(r[0])?`<b>${TLt(r,esc(evL(r[0])))}</b> <span class="natdot" title="National championship"></span>`:TLt(r,esc(evL(r[0])))}</td><td>${dTag(r[1])}</td><td>${ppl(r[3])}</td><td class="muted">${r[4].length?ppl(r[4]):""}</td></tr>`).join("")+`</tbody></table></div>`;
+     <div class="tablewrap"><table><thead><tr><th>Year</th><th>Tournament</th><th></th><th>Winner(s)</th><th>Runner(s)-up</th></tr></thead><tbody>`+
+     rows.slice(0,600).map(r=>`<tr${q&&r[3].some(n=>n.toLowerCase().includes(q))?' class="sel"':(isNat(r[0])?' class="natrow"':"")}><td>${rYear(r)}</td><td>${isNat(r[0])?`<b>${TLt(r,esc(evL(r[0])))}</b> <span class="natdot" title="National championship"></span>`:TLt(r,esc(evL(r[0])))}</td><td>${dTag(r[1])}</td><td>${ppl(r[3])}</td><td class="muted">${r[4].length?ppl(r[4]):""}</td></tr>`).join("")+`</tbody></table></div>`;
   } else if(S.tsub==="board"){
     const BBN={}; (T.winch||[]).forEach(r=>r[1].forEach(n=>BBN[n]=(BBN[n]||0)+1));
     let list=Object.values(X.by).map(o=>{
@@ -1795,8 +1819,8 @@ function titleStatsHTML(){
       const nxt=e.find(x=>x[1]<e[0][1]); return trow([`${d}s`,top.map(x=>TIP(x[0])).join(", "),[e[0][1]],nxt?`<span class="muted">${esc(nxt[0])} (${nxt[1]})</span>`:""]);});};
   let h=`<div class="recs">`;
   h+=miniCard("Most titles in one season","Singles and doubles together.",["Player","Season","r:Titles","r:Singles"],bestSeason.map(o=>trow([TIP(o.n),esc(o.se),[o.c],[o.s]])));
-  h+=miniCard("Longest unbeaten runs at one tournament","Consecutive editions won (years the event wasn't held don't break a run).",["Player","Tournament","r:In a row","Seasons"],
-    longRuns.map(o=>trow([TIP(o.n),esc(evL(o.ev))+` ${dTag(o.disc)}`,[o.run],`<span class="muted">${esc(o.from)}–${esc(o.to)}</span>`])));
+  h+=miniCard("Longest unbeaten runs at one tournament","Consecutive editions won (years the event wasn't held don't break a run).",["Player","Tournament","r:In a row","Years"],
+    longRuns.map(o=>trow([TIP(o.n),esc(evL(o.ev))+` ${dTag(o.disc)}`,[o.run],`<span class="muted" style="white-space:nowrap">${evYear(o.ev,o.from,o.disc)}–${evYear(o.ev,o.to,o.disc)}</span>`])));
   h+=miniCard("Most wins of one tournament","",["Player","Tournament","r:Titles"],mostOne.map(o=>trow([TIP(o.n),esc(evL(o.ev))+` ${dTag(o.disc)}`,[o.tot]])));
   const cs=careerSweeps();
   h+=miniCard("Career clean sweeps – Singles","Won every open singles tournament that was available during their title-winning career (held in at least three of those seasons); 'sets' is how many times over.",["Player","r:Sets","r:Tournaments","Career"],
@@ -1886,14 +1910,14 @@ function playerTitlesHTML(p){
     const na=t=>`<td class="r na" title="${esc(t)}">–</td><td class="na muted" style="font-size:12.5px">${esc(t)}</td>`;
     const ORD=["Nationals",...EV_ORDER.filter(e=>!isNat(e))];
 
-    h+=`<div class="tablewrap" style="max-height:none;margin-top:8px"><table><thead><tr><th>Tournament</th><th class="r">Singles</th><th>Seasons</th><th class="r">Doubles</th><th>Seasons (partner)</th></tr></thead><tbody>`+
+    h+=`<div class="tablewrap" style="max-height:none;margin-top:8px"><table><thead><tr><th>Tournament</th><th class="r">Singles</th><th>Years</th><th class="r">Doubles</th><th>Years (partner)</th></tr></thead><tbody>`+
       ORD.filter(e=>g[e]).map(e=>{const nat=e==="Nationals", cS=nat?CN:CS, cD=nat?CN:CD, wS=g[e].S.length?"":why(e,"Singles"), wD=g[e].D.length?"":why(e,"Doubles");
         return `<tr${nat?' class="natrow"':""}><td style="white-space:nowrap">${nat?svg("trophy",CN,16)+" <b>National Championships</b>":esc(evL(e))}</td>`+
-        (wS?na(wS):`<td class="r">${heat(g[e].S.length,cS)}</td><td>${g[e].S.map(r=>TLt(r,pill(esc(r[2]),cS))).join("")}</td>`)+
-        (wD?na(wD):`<td class="r">${heat(g[e].D.length,cD)}</td><td>${g[e].D.map(r=>TLt(r,pill(esc(r[2])+(r[3].length>1?` <span style="opacity:.75">(${esc(r[3].filter(x=>x!==p).join(", "))})</span>`:""),cD))).join("")}</td>`)+`</tr>`;}).join("")+wbRow()+`</tbody></table></div>`;
+        (wS?na(wS):`<td class="r">${heat(g[e].S.length,cS)}</td><td>${g[e].S.map(r=>TLt(r,pill(rYear(r),cS))).join("")}</td>`)+
+        (wD?na(wD):`<td class="r">${heat(g[e].D.length,cD)}</td><td>${g[e].D.map(r=>TLt(r,pill(rYear(r)+(r[3].length>1?` <span style="opacity:.75">(${esc(r[3].filter(x=>x!==p).join(", "))})</span>`:""),cD))).join("")}</td>`)+`</tr>`;}).join("")+wbRow()+`</tbody></table></div>`;
   }
   else if(wWon.length||wLost.length){
-    h+=`<div class="tablewrap" style="max-height:none;margin-top:8px"><table><thead><tr><th>Tournament</th><th class="r">Singles</th><th>Seasons</th><th class="r">Doubles</th><th>Seasons (partner)</th></tr></thead><tbody>${wbRow()}</tbody></table></div>`;
+    h+=`<div class="tablewrap" style="max-height:none;margin-top:8px"><table><thead><tr><th>Tournament</th><th class="r">Singles</th><th>Years</th><th class="r">Doubles</th><th>Years (partner)</th></tr></thead><tbody>${wbRow()}</tbody></table></div>`;
   }
   if(wLost.length||wMs.length){
     let wn=0,ls=0; wMs.forEach(m=>{const side=m[3].includes(p)?1:2; if(m[6]) m[6]===side?wn++:ls++;});
@@ -1901,9 +1925,9 @@ function playerTitlesHTML(p){
   }
   if(o&&(o.nsF||o.ndF)){
     const lost=L.filter(r=>isNat(r[0])&&r[4].includes(p));
-    h+=`<p class="sub" style="margin-top:10px"><b>National finals lost</b> (${o.nsF} singles, ${o.ndF} doubles): ${lost.map(r=>TLt(r,pill(`${r[1]==="Singles"?"NS":"ND"} ${esc(r[2])}`,CF))).join("")}</p>`;
+    h+=`<p class="sub" style="margin-top:10px"><b>National finals lost</b> (${o.nsF} singles, ${o.ndF} doubles): ${lost.map(r=>TLt(r,pill(`${r[1]==="Singles"?"NS":"ND"} ${rYear(r)}`,CF))).join("")}</p>`;
   }
-  if(plates.length) h+=`<p class="sub" style="margin-top:8px"><b>Plate wins (${plates.length}):</b> ${plates.map(r=>pill(`${esc(evL(r[0]))} ${r[1]==="Doubles"?"doubles ":""}${r[3]!=="Plate"?esc(r[3].toLowerCase())+" ":""}${esc(r[2])}`,CP)).join("")}</p>`;
+  if(plates.length) h+=`<p class="sub" style="margin-top:8px"><b>Plate wins (${plates.length}):</b> ${plates.map(r=>pill(`${esc(evL(r[0]))} ${r[1]==="Doubles"?"doubles ":""}${r[3]!=="Plate"?esc(r[3].toLowerCase())+" ":""}${rYear(r)}`,CP)).join("")}</p>`;
   const A=achieveIndex().by[p];
   const VV=achieveIndex().views, vs=["S","D"].map(v=>VV[v].list.find(o=>o.a.n===p)).filter(Boolean);
   if(A) h+=`<p class="sub" style="margin-top:8px">Achievements: ${tierBadge(A.tier)} <b>${esc(A.tier.name)}</b> · ${A.pts} points · #${A.rank} of ${achieveIndex().list.length}${vs.map(o=>` · ${tierBadge(o.tier)} ${esc(o.tier.name)} (#${o.rank})`).join("")} ${A.badges.map(badgeIcon).join("")} <a href="#" data-tab="achieve">see all</a></p>`;
@@ -1924,8 +1948,8 @@ function renderPlates(){
   if(S.psub==="list"){
     const rows=P.filter(r=>(S.pdisc==="All"||r[1]===S.pdisc)&&(!S.pev||r[0]===S.pev)&&(!q||r[4].some(n=>n.toLowerCase().includes(q)))).slice().reverse();
     h+=`<p class="sub" style="margin-top:10px">${rows.length} plate win${rows.length===1?"":"s"}${q?` for “${esc(S.pq)}”`:""}.</p>
-      <div class="tablewrap"><table><thead><tr><th>Season</th><th>Tournament</th><th></th><th>Winner(s)</th><th>Runner(s)-up</th></tr></thead><tbody>`+
-      rows.map(r=>`<tr><td>${esc(r[2])}</td><td>${esc(evL(r[0]))}${r[3]!=="Plate"?` <span class="tag">${esc(r[3])}</span>`:""}</td><td>${dTag(r[1])}</td><td>${ppl(r[4])}</td><td class="muted">${r[5].length?ppl(r[5]):""}</td></tr>`).join("")+`</tbody></table></div>`;
+      <div class="tablewrap"><table><thead><tr><th>Year</th><th>Tournament</th><th></th><th>Winner(s)</th><th>Runner(s)-up</th></tr></thead><tbody>`+
+      rows.map(r=>`<tr><td>${rYear(r)}</td><td>${esc(evL(r[0]))}${r[3]!=="Plate"?` <span class="tag">${esc(r[3])}</span>`:""}</td><td>${dTag(r[1])}</td><td>${ppl(r[4])}</td><td class="muted">${r[5].length?ppl(r[5]):""}</td></tr>`).join("")+`</tbody></table></div>`;
   } else {
     const c={}, byEv={}, bySe={};
     P.filter(r=>!hcapPlate(r)).forEach(r=>r[4].forEach(n=>{c[n]=(c[n]||0)+1; const k=n+"|"+r[0]; byEv[k]=(byEv[k]||0)+1; const s=n+"|"+r[2]; bySe[s]=(bySe[s]||0)+1;}));
@@ -2349,19 +2373,19 @@ function renderTourns(){
   const cdot={}; top.slice(0,6).forEach(([n],i)=>cdot[n]=PALETTE[i]);   // the leading champions get their own colour in the roll
   const D_=S.evd, tidx={}; DATA.disc[D_].tinfo.forEach((t,i)=>{ if(t[0]===S.ev&&DATA.disc[D_].matches.some(m=>m[0]===i)) tidx[t[1]]=i; });
   let h=`<div class="rec-head" style="margin-top:12px">
-    <div class="stat pt-stat" style="--c:var(--accent)"><div class="num">${rows.length}</div><div class="muted">editions recorded (first ${esc(held[0])})</div></div>
+    <div class="stat pt-stat" style="--c:var(--accent)"><div class="num">${rows.length}</div><div class="muted">editions recorded (first ${evYear(S.ev,held[0],D_)})</div></div>
     <div class="stat pt-stat" style="--c:#B8860B"><div class="num">${top[0][1]}</div><div class="muted">most titles – ${esc(top.filter(x=>x[1]===top[0][1]).map(x=>x[0]).join(", "))}</div></div>
     <div class="stat pt-stat" style="--c:var(--singles)"><div class="num">${Object.keys(c).length}</div><div class="muted">different champions</div></div>
     <div class="stat pt-stat" style="--c:var(--doubles)"><div class="num">${runs[0].run}</div><div class="muted">longest winning run (${esc(runs[0].n)})</div></div></div><div class="recs">`;
   h+=miniCard("Most titles","",["Player","r:Titles"],top.topBy(12,(a,b)=>b[1]-a[1]).map(([n,k])=>trow([TIP(n),[k]])));
   h+=miniCard("Most finals","Runners-up are only known for some years.",["Player","r:Finals","r:Won"],Object.entries(f).sort((a,b)=>b[1].f-a[1].f||b[1].w-a[1].w).topBy(10,(a,b)=>b[1].f-a[1].f||b[1].w-a[1].w).map(([n,o])=>trow([TIP(n),[o.f],[o.w]])));
-  h+=miniCard("Longest winning runs","Consecutive editions won.",["Player","r:In a row","Seasons"],runs.map(o=>trow([TIP(o.n),[o.run],`<span class="muted">${esc(o.from)}–${esc(o.to)}</span>`])));
+  h+=miniCard("Longest winning runs","Consecutive editions won.",["Player","r:In a row","Years"],runs.map(o=>trow([TIP(o.n),[o.run],`<span class="muted" style="white-space:nowrap">${evYear(S.ev,o.from,D_)}–${evYear(S.ev,o.to,D_)}</span>`])));
   if(isNat(S.ev)){ const per={}; rows.forEach(r=>[...r[3],...r[4]].forEach(n=>(per[n]=per[n]||[]).push(r[2])));
     const fr=Object.entries(per).flatMap(([n,ss])=>allRuns(ss,held).map(rr=>({n,...rr,w:rows.filter(r=>r[3].includes(n)&&r[2]>=rr.from&&r[2]<=rr.to).length}))).filter(o=>o.run>=2).sort((a,b)=>b.run-a.run||b.w-a.w||a.from.localeCompare(b.from)).topBy(8,(a,b)=>b.run-a.run||b.w-a.w);
-    if(fr.length) h+=miniCard("Consecutive finals","Finals reached in a row, won or lost.",["Player","r:Finals in a row","r:Won","Seasons"],fr.map(o=>trow([TIP(o.n),[o.run],[o.w],`<span class="muted">${esc(o.from)}–${esc(o.to)}</span>`]))); }
+    if(fr.length) h+=miniCard("Consecutive finals","Finals reached in a row, won or lost.",["Player","r:Finals in a row","r:Won","Years"],fr.map(o=>trow([TIP(o.n),[o.run],[o.w],`<span class="muted" style="white-space:nowrap">${evYear(S.ev,o.from,D_)}–${evYear(S.ev,o.to,D_)}</span>`]))); }
   if(Object.keys(pairs).length) h+=miniCard("Most successful pairs","",["Pair","r:Titles"],Object.entries(pairs).sort((a,b)=>b[1]-a[1]).topBy(8,(a,b)=>b[1]-a[1]).map(([k,n])=>trow([ppl(k.split(" & ")),[n]])));
-  h+=`</div><h3 style="margin-top:22px">Roll of honour</h3><div class="tablewrap" style="max-height:none"><table><thead><tr><th>Season</th><th>Winner${S.evd==="Doubles"?"s":""}</th><th>Runner${S.evd==="Doubles"?"s":""}-up</th><th>Venue</th><th></th></tr></thead><tbody>`+
-    rows.slice().reverse().map(r=>`<tr><td><a href="#" data-season="${esc(r[2])}">${esc(r[2])}</a></td><td>${r[3].map(n=>cdot[n]?`<span class="sp" style="--c:${cdot[n]}"><b>${TIP(n)}</b></span>`:`<b>${TIP(n)}</b>`).join(" &amp; ")}</td><td class="muted">${r[4].length?ppl(r[4]):""}</td><td>${vTag(venueEv(S.ev,r[2]))}</td><td>${tidx[r[2]]!=null?`<a href="#" data-tourn="${D_}|${tidx[r[2]]}">results</a>`:""}</td></tr>`).join("")+`</tbody></table></div>`;
+  h+=`</div><h3 style="margin-top:22px">Roll of honour</h3><div class="tablewrap" style="max-height:none"><table><thead><tr><th>Year</th><th>Winner${S.evd==="Doubles"?"s":""}</th><th>Runner${S.evd==="Doubles"?"s":""}-up</th><th>Venue</th><th></th></tr></thead><tbody>`+
+    rows.slice().reverse().map(r=>`<tr><td><a href="#" data-season="${esc(r[2])}" title="Season ${esc(r[2])}">${evYear(S.ev,r[2],D_)}</a></td><td>${r[3].map(n=>cdot[n]?`<span class="sp" style="--c:${cdot[n]}"><b>${TIP(n)}</b></span>`:`<b>${TIP(n)}</b>`).join(" &amp; ")}</td><td class="muted">${r[4].length?ppl(r[4]):""}</td><td>${vTag(venueEv(S.ev,r[2]))}</td><td>${tidx[r[2]]!=null?`<a href="#" data-tourn="${D_}|${tidx[r[2]]}">results</a>`:""}</td></tr>`).join("")+`</tbody></table></div>`;
   $("#tv-body").innerHTML=h;
 }
 
@@ -2408,7 +2432,7 @@ function renderAdmin(){
   Object.entries(byE).forEach(([k,ys])=>{ys.sort((a,b)=>a-b); for(let i=1;i<ys.length;i++) if(ys[i]-ys[i-1]>1&&ys[i]-ys[i-1]<6) for(let y=ys[i-1]+1;y<ys[i];y++) gaps.push([k.replace("|"," "),`${y}/${String(y+1).slice(2)}`]);});
   h+=card("Missing open titles?","Seasons with no winner recorded inside an event's run (not held, or missing). Gaps over five years, the war years and 2020/21 (no tournaments: COVID) are left out.",["Event","Season"],gaps.filter(g=>!/^(1939|194[0-5]|2020)/.test(g[1])).map(g=>{const [e,d]=[g[0].replace(/ (Singles|Doubles)$/,""),g[0].match(/(Singles|Doubles)$/)[1]]; return trow([`${esc(evL(e))} ${dTag(d)}`,`<a href="#" data-season="${esc(g[1])}">${esc(g[1])}</a>`]);}));
   const noRU=L.filter(r=>!r[4].length&&r[2]>="1998/99");
-  h+=card("Titles with no runner-up","From 1998/99, when match records begin.",["Event","Season","Winner"],noRU.map(r=>trow([`${esc(evL(r[0]))} ${dTag(r[1])}`,esc(r[2]),ppl(r[3])])));
+  h+=card("Titles with no runner-up","From 1998/99, when match records begin.",["Event","Year","Winner"],noRU.map(r=>trow([`${esc(evL(r[0]))} ${dTag(r[1])}`,rYear(r),ppl(r[3])])));
   // results with problems
   ["Singles","Doubles"].forEach(d=>{const X=DATA.disc[d], c={}; X.matches.forEach(m=>{ if(!m[5]&&!isWO(m)&&!isRet(m)&&m[7]!=="result only") c[m[0]]=(c[m[0]]||0)+1; });
     h+=card(`Matches with no score – ${d}`,"Counted as wins when the winner is known; not rated for Elo.",["Tournament","r:Matches"],Object.entries(c).sort((a,b)=>b[1]-a[1]).topBy(25,(a,b)=>b[1]-a[1]).map(([t,k])=>trow([`<a href="#" data-tourn="${d}|${t}">${esc(X.tournaments[t])}</a>`,[k]])));
@@ -2689,8 +2713,8 @@ function rivalries(disc){
   const k=disc+(S.inclU?"|u":""); if(RIV[k]) return RIV[k];
   const X=DATA.disc[disc], pr={};
   X.matches.forEach(m=>{ if(!m[6]||!mOK(disc,m)||isWO(m)||HCAP(disc,m[0])) return; const se=(X.tinfo[m[0]]||[])[1]||"";
-    m[3].forEach(a=>m[4].forEach(b=>{const sw=a>b, x=sw?b:a, y=sw?a:b, kk=x+"|"+y, o=pr[kk]=pr[kk]||{a:x,b:y,m:0,wa:0,wb:0,f:0,first:se,last:se};
-      o.m++; ((m[6]===1)!==sw)?o.wa++:o.wb++; if(m[2]==="F")o.f++; if(se<o.first)o.first=se; if(se>o.last)o.last=se;}));});
+    m[3].forEach(a=>m[4].forEach(b=>{const sw=a>b, x=sw?b:a, y=sw?a:b, kk=x+"|"+y, o=pr[kk]=pr[kk]||{a:x,b:y,m:0,wa:0,wb:0,f:0,first:se,last:se,fy:9999,ly:0}, yy=tYear(disc,m[0]);
+      if(yy<o.fy)o.fy=yy; if(yy>o.ly)o.ly=yy; o.m++; ((m[6]===1)!==sw)?o.wa++:o.wb++; if(m[2]==="F")o.f++; if(se<o.first)o.first=se; if(se>o.last)o.last=se;}));});
   return RIV[k]=Object.values(pr).sort((p,q)=>q.m-p.m||q.f-p.f);
 }
 const PKEY=side=>side.slice().sort(SNC).join(" & "), PKC=(p,q)=>{ const P=p.split(" & "), Q=q.split(" & "); return SNC(P[0],Q[0])||SNC(P[1]||"",Q[1]||""); };
@@ -2698,24 +2722,24 @@ function pairRivalries(){             // doubles: the same two partnerships on o
   const k="pairs"+(S.inclU?"|u":""); if(RIV[k]) return RIV[k];
   const X=DATA.disc.Doubles, pr={};
   X.matches.forEach(m=>{ if(!m[6]||!mOK("Doubles",m)||isWO(m)||HCAP("Doubles",m[0])||m[3].length!==2||m[4].length!==2) return; const se=(X.tinfo[m[0]]||[])[1]||"";
-    const p1=PKEY(m[3]), p2=PKEY(m[4]), sw=PKC(p1,p2)>0, x=sw?p2:p1, y=sw?p1:p2, kk=x+"|"+y, o=pr[kk]=pr[kk]||{a:x,b:y,pair:true,m:0,wa:0,wb:0,f:0,first:se,last:se};
-    o.m++; ((m[6]===1)!==sw)?o.wa++:o.wb++; if(m[2]==="F")o.f++; if(se<o.first)o.first=se; if(se>o.last)o.last=se; });
+    const p1=PKEY(m[3]), p2=PKEY(m[4]), sw=PKC(p1,p2)>0, x=sw?p2:p1, y=sw?p1:p2, kk=x+"|"+y, o=pr[kk]=pr[kk]||{a:x,b:y,pair:true,m:0,wa:0,wb:0,f:0,first:se,last:se,fy:9999,ly:0}, yy=tYear("Doubles",m[0]);
+    if(yy<o.fy)o.fy=yy; if(yy>o.ly)o.ly=yy; o.m++; ((m[6]===1)!==sw)?o.wa++:o.wb++; if(m[2]==="F")o.f++; if(se<o.first)o.first=se; if(se>o.last)o.last=se; });
   return RIV[k]=Object.values(pr).sort((p,q)=>q.m-p.m||q.f-p.f);
 }
 const pairA=k=>`<a href="#" data-pair="${esc(k)}">${esc(k)}</a>`;
 function renderRivals(){
   const disc=S.disc, DP=disc==="Doubles", R=DP?pairRivalries():rivalries(disc), min=DP?6:8;
-  $("#riv-sub").textContent=(DP?"The partnerships that have met each other most often":"The pairs of players who have met most often")+" in main-draw matches since 1994/95 (1996/97 and 1997/98 missing; walkovers, handicap events"+(S.inclU?"":", U25 and University events")+" left out). Click a rivalry for the full head-to-head.";
-  const who=o=>o.pair?`${pairA(o.a)} <span class="muted">v</span> ${pairA(o.b)}`:`<a href="#" data-riv="${esc(o.a)}|${esc(o.b)}">${esc(o.a)} <span class="muted">v</span> ${esc(o.b)}</a>`, span=o=>`<span class="muted" style="font-size:13px">${esc(o.first)}${o.last!==o.first?" – "+esc(o.last):""}</span>`;
+  $("#riv-sub").textContent=(DP?"The partnerships that have met each other most often":"The pairs of players who have met most often")+" in main-draw matches since 1988 (the 1996/97 and 1997/98 seasons are missing; walkovers, handicap events"+(S.inclU?"":", U25 and University events")+" left out). Click a rivalry for the full head-to-head.";
+  const who=o=>o.pair?`${pairA(o.a)} <span class="muted">v</span> ${pairA(o.b)}`:`<a href="#" data-riv="${esc(o.a)}|${esc(o.b)}">${esc(o.a)} <span class="muted">v</span> ${esc(o.b)}</a>`, span=o=>`<span class="muted" style="font-size:13px;white-space:nowrap">${o.fy}${o.ly!==o.fy?"–"+o.ly:""}</span>`;
   const bar=o=>`${o.wa}–${o.wb}<span class="rvbar" title="${esc(o.a)} ${o.wa}, ${esc(o.b)} ${o.wb}"><i style="width:${Math.round(100*o.wa/(o.wa+o.wb||1))}%"></i></span>`;
   const lead=o=>o.wa===o.wb?"level":o.pair?`${esc((o.wa>o.wb?o.a:o.b).split(" & ").map(n=>n.split(" ").slice(-1)[0]).join(" & "))} lead`:`${esc((o.wa>o.wb?o.a:o.b).split(" ").slice(-1)[0])} leads`;
   const big=R.filter(o=>o.m>=min);
   let h=`<div class="recs">`;
-  h+=miniCard("Most-played rivalries","Most meetings.",["Rivalry","r:Met","Record","Seasons"],R.topBy(15,(a,b)=>b.m-a.m).map(o=>trow([who(o),[o.m],bar(o),span(o)])));
+  h+=miniCard("Most-played rivalries","Most meetings.",["Rivalry","r:Met","Record","Years"],R.topBy(15,(a,b)=>b.m-a.m).map(o=>trow([who(o),[o.m],bar(o),span(o)])));
   h+=miniCard("Closest rivalries",`Smallest gap in wins (${min}+ meetings).`,["Rivalry","r:Met","Record",""],[...big].sort((a,b)=>Math.abs(a.wa-a.wb)-Math.abs(b.wa-b.wb)||b.m-a.m).topBy(15,(a,b)=>Math.abs(a.wa-a.wb)-Math.abs(b.wa-b.wb)||b.m-a.m).map(o=>trow([who(o),[o.m],bar(o),`<span class="muted" style="font-size:13px">${lead(o)}</span>`])));
   h+=miniCard("Most one-sided",`Biggest gap in wins (${min}+ meetings).`,["Rivalry","r:Met","Record",""],[...big].sort((a,b)=>Math.abs(b.wa-b.wb)-Math.abs(a.wa-a.wb)||b.m-a.m).topBy(15,(a,b)=>Math.abs(b.wa-b.wb)-Math.abs(a.wa-a.wb)||b.m-a.m).map(o=>trow([who(o),[o.m],bar(o),`<span class="muted" style="font-size:13px">${lead(o)}</span>`])));
-  h+=miniCard("Most finals against each other","Meetings in a final.",["Rivalry","r:Finals","r:Met","Seasons"],R.filter(o=>o.f>1).sort((a,b)=>b.f-a.f||b.m-a.m).topBy(15,(a,b)=>b.f-a.f||b.m-a.m).map(o=>trow([who(o),[o.f],[o.m],span(o)])));
-  if(DP){ const P=rivalries(disc); h+=miniCard("Players most often on opposite sides","Two players on opposite sides of the court, whoever their partners were.",["Players","r:Met","Record","Seasons"],P.topBy(15,(a,b)=>b.m-a.m).map(o=>trow([`<a href="#" data-riv="${esc(o.a)}|${esc(o.b)}">${esc(o.a)} <span class="muted">v</span> ${esc(o.b)}</a>`,[o.m],bar(o),span(o)]))); }
+  h+=miniCard("Most finals against each other","Meetings in a final.",["Rivalry","r:Finals","r:Met","Years"],R.filter(o=>o.f>1).sort((a,b)=>b.f-a.f||b.m-a.m).topBy(15,(a,b)=>b.f-a.f||b.m-a.m).map(o=>trow([who(o),[o.f],[o.m],span(o)])));
+  if(DP){ const P=rivalries(disc); h+=miniCard("Players most often on opposite sides","Two players on opposite sides of the court, whoever their partners were.",["Players","r:Met","Record","Years"],P.topBy(15,(a,b)=>b.m-a.m).map(o=>trow([`<a href="#" data-riv="${esc(o.a)}|${esc(o.b)}">${esc(o.a)} <span class="muted">v</span> ${esc(o.b)}</a>`,[o.m],bar(o),span(o)]))); }
   $("#riv-body").innerHTML=h+`</div>`; compactCards($("#riv-body"));
 }
 function bracketHTML(ms,p){            // main-draw knockout as a draw sheet, built backwards from the final
@@ -2883,7 +2907,7 @@ function renderHome(){
   // latest champions
   const lc=L.filter(r=>latest.includes(r[2])).sort((a,b)=>b[2].localeCompare(a[2])||((evMonth(b[0])+6)%12)-((evMonth(a[0])+6)%12)).slice(0,12);
   h+=`<div class="recs">`;
-  h+=`<div class="tcard"><h3>Latest champions</h3><p class="sub">The most recent open titles.</p><div class="tablewrap"><table><tbody>${lc.map(r=>`<tr${isNat(r[0])?' class="natrow"':""}><td style="white-space:nowrap"><a href="#" data-tev="${esc(r[0])}">${esc(evL(r[0]))}</a> ${dTag(r[1])}<div class="muted" style="font-size:12.5px"><a href="#" data-season="${esc(r[2])}">${esc(r[2])}</a></div></td><td><b>${ppl(r[3])}</b>${r[4].length?`<div class="muted" style="font-size:12.5px">bt ${ppl(r[4])}</div>`:""}</td></tr>`).join("")}</tbody></table></div></div>`;
+  h+=`<div class="tcard"><h3>Latest champions</h3><p class="sub">The most recent open titles.</p><div class="tablewrap"><table><tbody>${lc.map(r=>`<tr${isNat(r[0])?' class="natrow"':""}><td style="white-space:nowrap"><a href="#" data-tev="${esc(r[0])}">${esc(evL(r[0]))}</a> ${dTag(r[1])}<div class="muted" style="font-size:12.5px"><a href="#" data-season="${esc(r[2])}" title="Season ${esc(r[2])}">${rYear(r)}</a></div></td><td><b>${ppl(r[3])}</b>${r[4].length?`<div class="muted" style="font-size:12.5px">bt ${ppl(r[4])}</div>`:""}</td></tr>`).join("")}</tbody></table></div></div>`;
   const ms=milestones().slice(0,10);
   h+=`<div class="tcard"><h3>Milestones</h3><p class="sub">Landmarks reached in the last two seasons (Winchester Fives not included).</p><div class="tablewrap"><table><tbody>${ms.length?ms.map(o=>`<tr><td>${o.ic?svg(o.ic,"#8A97A5",15):svg("trophy","#B8860B",15)} ${TIP(o.n)}</td><td>${esc(o.txt)}<div class="muted" style="font-size:12.5px">${esc(o.se)} · ${esc(evL(o.ev)||o.ev)}</div></td></tr>`).join(""):`<tr><td class="muted">None yet.</td></tr>`}</tbody></table></div></div>`;
   const ups=[]; ["Singles","Doubles"].forEach(d=>upsets(d).forEach(u=>{ if(u.ok&&u.gap>0&&mOK(d,u.m)&&latest.includes((DATA.disc[d].tinfo[u.t]||[])[1])) ups.push({...u,d}); }));
@@ -2919,7 +2943,7 @@ function renderPairs(){
       <div class="stat pt-stat" style="--c:var(--doubles)"><div class="num">${o.n}</div><div class="muted">main-draw matches</div></div>
       <div class="stat pt-stat" style="--c:#2B8A3E"><div class="num">${t?Math.round(100*o.w/t)+"%":"–"}</div><div class="muted">won ${o.w}, lost ${o.l}</div></div>
       <div class="stat pt-stat" style="--c:var(--accent)"><div class="num" style="font-size:26px">${esc(o.first||"")}${o.last&&o.last!==o.first?"–"+esc(o.last.slice(-2)):""}</div><div class="muted">seasons together</div></div></div>`;
-    if(o.tl.length) h+=`<h3>Titles</h3><div>${o.tl.map(r=>`<span class="sp" style="--c:${isNat(r[0])?"#B8860B":"var(--doubles)"}">${esc(evL(r[0]))} ${esc(r[2])}</span>`).join("")}</div>`;
+    if(o.tl.length) h+=`<h3>Titles</h3><div>${o.tl.map(r=>`<span class="sp" style="--c:${isNat(r[0])?"#B8860B":"var(--doubles)"}">${esc(evL(r[0]))} ${rYear(r)}</span>`).join("")}</div>`;
     // opponents
     const opp={}; o.ms.forEach(i=>{const m=M[i], s=o.ps.every(p=>m[3].includes(p))?1:2, op=(s===1?m[4]:m[3]).slice().sort(SNC).join(" & "); const x=opp[op]=opp[op]||{w:0,l:0}; if(m[6]) (m[6]===s?x.w++:x.l++);});
     const best=o.ms.map(i=>M[i]).filter(m=>m.length>9&&m[6]).map(m=>{const s=o.ps.every(p=>m[3].includes(p))?1:2; return {m,s,won:m[6]===s,lr:s===1?m[9]:m[8]};}).filter(x=>x.won).sort((a,b)=>b.lr-a.lr).topBy(6,(a,b)=>b.lr-a.lr);
@@ -2934,7 +2958,7 @@ function renderPairs(){
   h+=miniCard("Most titles as a pair","Open doubles titles won together, back to the 1920s.",["Pair","r:Titles","r:National"],L.filter(o=>o.titles).sort((a,b)=>b.titles-a.titles||b.nat-a.nat).topBy(10,(a,b)=>b.titles-a.titles||b.nat-a.nat).map(o=>trow([pairLink(o),[o.titles],[o.nat||""]])));
   h+=miniCard("Best win rate","Pairs with 20+ main-draw matches together (from 1994/95).",["Pair","r:Win %","W–L"],L.filter(o=>o.w+o.l>=20).map(o=>({...o,pc:Math.round(100*o.w/(o.w+o.l))})).sort((a,b)=>b.pc-a.pc||b.n-a.n).topBy(10,(a,b)=>b.pc-a.pc||b.n-a.n).map(o=>trow([pairLink(o),[o.pc],`<span style="white-space:nowrap">${o.w}–${o.l}</span>`])));
   h+=miniCard("Most matches together","",["Pair","r:Matches","W–L"],L.slice().sort((a,b)=>b.n-a.n).topBy(10,(a,b)=>b.n-a.n).map(o=>trow([pairLink(o),[o.n],`<span style="white-space:nowrap">${o.w}–${o.l}</span>`])));
-  h+=miniCard("Most National Doubles titles","",["Pair","r:Titles","Seasons"],L.filter(o=>o.nat).sort((a,b)=>b.nat-a.nat).topBy(10,(a,b)=>b.nat-a.nat).map(o=>trow([pairLink(o),[o.nat],`<span class="muted">${esc(o.tl.filter(r=>isNat(r[0])).map(r=>r[2]).join(", "))}</span>`])));
+  h+=miniCard("Most National Doubles titles","",["Pair","r:Titles","Years"],L.filter(o=>o.nat).sort((a,b)=>b.nat-a.nat).topBy(10,(a,b)=>b.nat-a.nat).map(o=>trow([pairLink(o),[o.nat],`<span class="muted">${esc(o.tl.filter(r=>isNat(r[0])).map(rYear).join(", "))}</span>`])));
   h+=`</div><h3 style="margin-top:22px">All pairs</h3><p class="sub">Click a pair for their titles, matches, opponents and best wins.</p>`;
   const rows=L.filter(o=>!q||o.k.toLowerCase().includes(q)).sort((a,b)=>b.titles-a.titles||b.n-a.n).slice(0,q?300:150);
   h+=`<div class="tablewrap"><table><thead><tr><th>Pair</th><th class="r">Titles</th><th class="r">Played</th><th class="r">W–L</th><th>Win %</th><th>Seasons</th></tr></thead><tbody>${rows.map(o=>{const t=o.w+o.l, pc=t?Math.round(100*o.w/t):null;
