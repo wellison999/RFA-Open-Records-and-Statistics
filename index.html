@@ -1972,7 +1972,7 @@ function playerTitlesHTML(p){
       rows.forEach(r=>{ const q=cur[cur.length-1]; if(q&&all.indexOf(r[2])!==all.indexOf(q[2])+1) flush(); cur.push(r); }); flush();
       return out.join(""); }).join("")}</p>`;
   }
-  if(plates.length) h+=`<p class="sub" style="margin-top:8px"><b>Plate wins (${plates.length}):</b> ${plates.map(r=>pill(`${esc(evL(r[0]))} ${r[1]==="Doubles"?"doubles ":""}${r[3]!=="Plate"?esc(r[3].toLowerCase())+" ":""}${rYear(r)}`,CP)).join("")}</p>`;
+  if(plates.length) h+=`<p class="sub" style="margin-top:8px"><b>Plate wins (${plates.length}):</b> ${plates.map(r=>pill(`${esc(evL(r[0]))} ${/singles|doubles/i.test(evL(r[0]))?"":r[1].toLowerCase()+" "}${r[3]!=="Plate"?esc(r[3].toLowerCase())+" ":""}${rYear(r)}`,CP)).join("")}</p>`;
   const A=achieveIndex().by[p];
   const VV=achieveIndex().views, vs=["S","D"].map(v=>VV[v].list.find(o=>o.a.n===p)).filter(Boolean);
   if(A) h+=`<p class="sub" style="margin-top:8px">Achievements: ${tierBadge(A.tier)} <b>${esc(A.tier.name)}</b> · ${A.pts} points · #${A.rank} of ${achieveIndex().list.length}${vs.map(o=>` · ${tierBadge(o.tier)} ${esc(o.tier.name)} (#${o.rank})`).join("")} ${A.badges.map(badgeIcon).join("")} <a href="#" data-tab="achieve">see all</a></p>`;
