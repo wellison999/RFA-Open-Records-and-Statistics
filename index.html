@@ -2026,7 +2026,7 @@ const ACH_LABEL={nsW:"National Singles titles",nsF:"National Singles finals lost
   nat3:"National title run reaching 3 in a row",nat5:"National title run reaching 5 in a row",nat10:"National title run reaching 10 in a row",nat15:"National title run reaching 15 in a row",
   reg5:"Regional title run reaching 5 in a row (same tournament)",reg10:"Regional run reaching 10 in a row",reg15:"Regional run reaching 15 in a row",reg20:"Regional run reaching 20 in a row",
   dbl:"National Singles and Doubles in the same season",wW:"Barnes Bridge titles (Winchester Fives national doubles)",wF:"Barnes Bridge finals lost"};
-const TIERS=[{name:"GOAT",min:4000,col:"#C0392B",icon:"goat",note:"Greatest of all time"},{name:"Legend",min:2000,col:"#5B3FB5",icon:"gem",note:"A super-exceptional career, short of GOAT"},{name:"All-time great",min:1000,col:"#0B6E8A",icon:"titan",note:"Among the very greatest"},{name:"Grandmaster",min:500,col:"#B8860B",icon:"crown"},{name:"Master",min:300,col:"#7A1F5C",icon:"laurel"},
+const TIERS=[{name:"GOAT",min:4000,col:"#C0392B",icon:"goat",note:"Greatest of all time"},{name:"Legend",min:2000,col:"#5B3FB5",icon:"gem",note:"A super-exceptional career, short of GOAT"},{name:"All-Time Great",min:1000,col:"#0B6E8A",icon:"titan",note:"Among the very greatest"},{name:"Grandmaster",min:500,col:"#B8860B",icon:"crown"},{name:"Master",min:300,col:"#7A1F5C",icon:"laurel"},
   {name:"Champion",min:120,col:"#1F4F8A",icon:"trophy"},{name:"Expert",min:60,col:"#2B7A5B",icon:"star"},{name:"Contender",min:25,col:"#8B5A2B",icon:"shield"},
   {name:"Challenger",min:10,col:"#6B7280",icon:"glove"},{name:"Competitor",min:0,col:"#9AA3AD",icon:"ball"}];
 const ICON={
@@ -2158,7 +2158,7 @@ function achieveIndex(){
       else if(t.min===0) min=0;
       else { const k=Math.min(vl.length,cum[i]); min=k?vl[k-1].pts:1; }
       return {...t,min,name:VNAME[v]+t.name}; });
-    // fixed round lines for every tier below GOAT, including Legend between All-time great and GOAT (singles and doubles boards only)
+    // fixed round lines for every tier below GOAT, including Legend between All-Time Great and GOAT (singles and doubles boards only)
     const FIX=VFIX[v]; tiers.forEach(t=>{ if(FIX[t.icon]!=null) t.min=FIX[t.icon]; });
     for(let i=tiers.length-2;i>1;i--) if(tiers[i].min<=tiers[i+1].min&&isFinite(tiers[i].min)) tiers[i+1].min=Math.max(0,tiers[i].min-1);   // keep the lines strictly in order
     vl.forEach(o=>o.tier=tiers.find(t=>o.pts>=t.min));
@@ -2171,7 +2171,7 @@ function renderAchieve(){
   const keys=v==="all"?Object.keys(ACH_PTS):[...VKEYS[v],...RUNK];
   const items=v==="all"?I.list.map(a=>({a,c:a.c,pts:a.pts,tier:a.tier,rank:a.rank})):V.list;
   $("#ac-legend").innerHTML=`<div class="tiers">${V.tiers.map(t=>`<span class="tier">${svg(t.icon,t.col,26)}<b>${t.name}</b><span class="muted">${isFinite(t.min)?`${t.min||1}+ pts · ${items.filter(o=>o.tier===t).length}`:"nobody yet"}</span></span>`).join("")}</div><p class="muted" style="font-size:12.5px;margin:6px 0 0">There were few regional events before 1967/68, so titles and National finals from before then count 25% extra.</p>
-    ${v!=="all"?`<p class="sub" style="margin-top:8px">${v==="S"?"Singles":"Doubles"} achievements only${v==="D"?" (including the Barnes Bridge)":""}. The points are the same as overall; ${VNAME[v]}GOAT is ${VFIX[v].goat.toLocaleString()}+ points${V.list.some(o=>o.pts>=VFIX[v].goat)?"":" (nobody yet)"}, Legend ${VFIX[v].gem.toLocaleString()}+, All-time great ${VFIX[v].titan}+, Grandmaster ${VFIX[v].crown}+, Master ${VFIX[v].laurel}+, Champion ${VFIX[v].trophy}+, Expert ${VFIX[v].star}+, Contender ${VFIX[v].shield}+ and Challenger ${VFIX[v].glove}+.</p>`:""}
+    ${v!=="all"?`<p class="sub" style="margin-top:8px">${v==="S"?"Singles":"Doubles"} achievements only${v==="D"?" (including the Barnes Bridge)":""}. The points are the same as overall; ${VNAME[v]}GOAT is ${VFIX[v].goat.toLocaleString()}+ points${V.list.some(o=>o.pts>=VFIX[v].goat)?"":" (nobody yet)"}, Legend ${VFIX[v].gem.toLocaleString()}+, All-Time Great ${VFIX[v].titan}+, Grandmaster ${VFIX[v].crown}+, Master ${VFIX[v].laurel}+, Champion ${VFIX[v].trophy}+, Expert ${VFIX[v].star}+, Contender ${VFIX[v].shield}+ and Challenger ${VFIX[v].glove}+.</p>`:""}
     <details style="margin:10px 0 0"><summary class="muted" style="cursor:pointer">How points are scored, and the badges</summary>
      <div class="ach-help"><table><tbody>${keys.map(k=>`<tr><td>${ACH_LABEL[k]}</td><td class="r"><b>${ACH_PTS[k]}</b></td></tr>`).join("")}</tbody></table>
      <div><p class="muted" style="margin:4px 0 8px;font-size:13px">Badges go up through ${METAL.map(m=>`<b style="color:${m.t||m.c}">${m.n.toLowerCase()}</b>`).join(", ")} as the achievement grows.</p>${BADGES.map(b=>`<p style="margin:4px 0">${b.th.map((t,i)=>t!=null?svg(b.id,METAL[i].c,20):"").join("")} ${esc(b.name)} <span class="muted" style="font-size:13px">(${b.th.map((t,i)=>t!=null?`${METAL[i].n.toLowerCase()} ${t}+`:"").filter(Boolean).join(" · ")} ${esc(b.unit)})</span></p>`).join("")}
