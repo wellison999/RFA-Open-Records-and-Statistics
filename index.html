@@ -1640,7 +1640,7 @@ function renderRecords(){
   h+=card("Longest winning runs","Consecutive matches won, across tournaments.",["Player","r:Run","From","To"],
     R.runs.map(o=>tr([nb(o.n),[o.best],`<span class="muted">${tN(o.bs)}</span>`,`<span class="muted">${tN(o.be)}</span>`])));
   if(S.disc==="Doubles") h+=card("Most-played rivalries","Most meetings between the same two partnerships.",["Rivalry","r:Met","r:Record"],
-    R.privals.map(o=>tr([pairA(o.a)+' <span class="muted">v</span> '+pairA(o.b),[o.m],[`${o.wa}–${o.wb}`]])));
+    R.privals.map(o=>tr([o.a.split(" & ").map(nb).join(" &amp; ")+' <span class="muted">v</span> '+o.b.split(" & ").map(nb).join(" &amp; "),[o.m],[`${o.wa}–${o.wb}`]])));
   else h+=card("Most-played rivalries","Most meetings between two players.",["Rivalry","r:Met","r:Record"],
     R.rivals.map(o=>tr([nb(o.a)+' <span class="muted">v</span> '+nb(o.b),[o.m],[`${o.wa}–${o.wb}`]])));
   if(S.disc==="Doubles") h+=card("Most successful partnerships","Matches won together.",["Pair","r:Won","r:Played","r:Win %"],
