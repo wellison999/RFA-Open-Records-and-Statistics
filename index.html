@@ -2018,9 +2018,10 @@ function renderPlates(){
 
 /* ---------------- achievements ---------------- */
 const ACH_PTS={nsW:50,nsF:20,ndW:35,ndF:13,firstNS:40,firstND:25,rS:8,rD:5,y1S:25,y1D:15,y3S:8,y3D:5,y10S:3,y10D:2,swS:40,swD:25,psS:20,psD:12,
-  nat3:25,nat5:50,nat10:100,nat15:150,reg5:15,reg10:40,reg15:60,reg20:80,dbl:25,wW:12,wF:5};
+  nat3:25,nat5:50,nat10:100,nat15:150,reg5:15,reg10:40,reg15:60,reg20:80,dbl:25,wW:12,wF:5,eraS:1,eraD:1};
+const ERA_CUT="1967/68", ERA_BONUS=0.25;   // titles before the regional circuit filled out (North West began 1967/68) count 25% extra (Will, 21 Nov 2026)
 const ACH_LABEL={nsW:"National Singles titles",nsF:"National Singles finals lost",ndW:"National Doubles titles",ndF:"National Doubles finals lost",
-  rS:"Regional singles titles",rD:"Regional doubles titles",y1S:"Season-end No. 1 (singles; the National Singles champion in seasons with no ranking list)",y1D:"Season-end No. 1 (doubles; the National Doubles champions in seasons with no ranking list)",y3S:"Season-end 2nd–3rd (singles; the National runner-up in seasons with no ranking list)",
+  rS:"Regional singles titles",rD:"Regional doubles titles",eraS:"Titles and National finals before 1967/68 count 25% extra (singles), per point",eraD:"Titles and National finals before 1967/68 count 25% extra (doubles), per point",y1S:"Season-end No. 1 (singles; the National Singles champion in seasons with no ranking list)",y1D:"Season-end No. 1 (doubles; the National Doubles champions in seasons with no ranking list)",y3S:"Season-end 2nd–3rd (singles; the National runner-up in seasons with no ranking list)",
   y3D:"Season-end 2nd–3rd (doubles; the National runners-up in seasons with no ranking list)",y10S:"Season-end 4th–10th (singles)",y10D:"Season-end 4th–10th (doubles)",swS:"Career clean sweeps (singles), per set",swD:"Career clean sweeps (doubles), per set",psS:"Perfect seasons (singles)",psD:"Perfect seasons (doubles)",firstNS:"First National Singles title (bonus)",firstND:"First National Doubles title (bonus)",
   nat3:"National title run reaching 3 in a row",nat5:"National title run reaching 5 in a row",nat10:"National title run reaching 10 in a row",nat15:"National title run reaching 15 in a row",
   reg5:"Regional title run reaching 5 in a row (same tournament)",reg10:"Regional run reaching 10 in a row",reg15:"Regional run reaching 15 in a row",reg20:"Regional run reaching 20 in a row",
@@ -2094,7 +2095,7 @@ function titanMin(pts,goatMin){ const rest=pts.filter(x=>x<goatMin); if(!(rest.l
   return rest[0]; }
 const RUNK=["nat3","nat5","nat10","nat15","reg5","reg10","reg15","reg20"];
 const RN=(a,d)=>{a.rn=a.rn||{S:Object.fromEntries(RUNK.map(k=>[k,0])),D:Object.fromEntries(RUNK.map(k=>[k,0]))}; return a.rn[d];};
-const VKEYS={S:["nsW","nsF","firstNS","rS","y1S","y3S","y10S","swS","psS"],D:["ndW","ndF","firstND","rD","y1D","y3D","y10D","swD","psD","wW","wF"]};
+const VKEYS={S:["nsW","nsF","firstNS","rS","y1S","y3S","y10S","swS","psS","eraS"],D:["ndW","ndF","firstND","rD","y1D","y3D","y10D","swD","psD","wW","wF","eraD"]};
 const VNAME={all:"",S:"Singles ",D:"Doubles "};
 const VFIX={S:{goat:2000,gem:1000,titan:500,crown:250,laurel:100,trophy:30,star:10,shield:5,glove:3},D:{goat:3000,gem:1500,titan:700,crown:350,laurel:125,trophy:75,star:30,shield:15,glove:5}};
 function viewCounts(a,v){ if(v==="all") return a.c; const o={}; VKEYS[v].forEach(k=>o[k]=a.c[k]); RUNK.forEach(k=>o[k]=(a.rn?a.rn[v][k]:0)); return o; }
@@ -2127,6 +2128,11 @@ function achieveIndex(){
   Object.entries(prt).forEach(([n,st])=>A(n).natPartners=st.size);
   const wk={}; L.filter(r=>!isNat(r[0])).forEach(r=>r[3].forEach(n=>{const k=n+"|"+r[0]+"|"+r[2]; (wk[k]=wk[k]||new Set()).add(r[1]);}));
   Object.entries(wk).forEach(([k,st])=>{ if(st.size===2){const a=A(k.split("|")[0]); a.wkDbl=(a.wkDbl||0)+1;} });
+  // early-era bonus: fewer events existed before 1967/68, so those titles (and National finals) count 25% extra
+  { const eb={}; L.filter(r=>r[2]<ERA_CUT).forEach(r=>{ const s=r[1]==="Singles", nat=isNat(r[0]);
+      const w=nat?(s?ACH_PTS.nsW:ACH_PTS.ndW):(s?ACH_PTS.rS:ACH_PTS.rD), f=nat?(s?ACH_PTS.nsF:ACH_PTS.ndF):0, k=s?"eraS":"eraD";
+      r[3].forEach(n=>{(eb[n]=eb[n]||{eraS:0,eraD:0})[k]+=w*ERA_BONUS;}); r[4].forEach(n=>{(eb[n]=eb[n]||{eraS:0,eraD:0})[k]+=f*ERA_BONUS;}); });
+    Object.entries(eb).forEach(([n,o])=>{const a=A(n); a.c.eraS=Math.round(o.eraS); a.c.eraD=Math.round(o.eraD);}); }
   cleanSweeps().forEach(x=>{A(x.n).c[x.disc==="Singles"?"psS":"psD"]++;});
   (TT().winch||[]).forEach(r=>{ r[1].forEach(n=>{const a=A(n); a.winch=(a.winch||0)+1; a.c.wW++;}); r[2].forEach(n=>{A(n).c.wF++;}); });
   careerSweeps().forEach(x=>{A(x.n).c[x.disc==="Singles"?"swS":"swD"]+=x.sets;});
@@ -2164,7 +2170,7 @@ function renderAchieve(){
   document.querySelectorAll("[data-acv]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.acv===v));
   const keys=v==="all"?Object.keys(ACH_PTS):[...VKEYS[v],...RUNK];
   const items=v==="all"?I.list.map(a=>({a,c:a.c,pts:a.pts,tier:a.tier,rank:a.rank})):V.list;
-  $("#ac-legend").innerHTML=`<div class="tiers">${V.tiers.map(t=>`<span class="tier">${svg(t.icon,t.col,26)}<b>${t.name}</b><span class="muted">${isFinite(t.min)?`${t.min||1}+ pts · ${items.filter(o=>o.tier===t).length}`:"nobody yet"}</span></span>`).join("")}</div><p class="muted" style="font-size:12.5px;margin:6px 0 0">Before the 1970s there were few regional events, so points totals understate players from earlier eras; National titles are the fairer comparison.</p>
+  $("#ac-legend").innerHTML=`<div class="tiers">${V.tiers.map(t=>`<span class="tier">${svg(t.icon,t.col,26)}<b>${t.name}</b><span class="muted">${isFinite(t.min)?`${t.min||1}+ pts · ${items.filter(o=>o.tier===t).length}`:"nobody yet"}</span></span>`).join("")}</div><p class="muted" style="font-size:12.5px;margin:6px 0 0">There were few regional events before 1967/68, so titles and National finals from before then count 25% extra.</p>
     ${v!=="all"?`<p class="sub" style="margin-top:8px">${v==="S"?"Singles":"Doubles"} achievements only${v==="D"?" (including the Barnes Bridge)":""}. The points are the same as overall; ${VNAME[v]}GOAT is ${VFIX[v].goat.toLocaleString()}+ points${V.list.some(o=>o.pts>=VFIX[v].goat)?"":" (nobody yet)"}, Legend ${VFIX[v].gem.toLocaleString()}+, All-time great ${VFIX[v].titan}+, Grandmaster ${VFIX[v].crown}+, Master ${VFIX[v].laurel}+, Champion ${VFIX[v].trophy}+, Expert ${VFIX[v].star}+, Contender ${VFIX[v].shield}+ and Challenger ${VFIX[v].glove}+.</p>`:""}
     <details style="margin:10px 0 0"><summary class="muted" style="cursor:pointer">How points are scored, and the badges</summary>
      <div class="ach-help"><table><tbody>${keys.map(k=>`<tr><td>${ACH_LABEL[k]}</td><td class="r"><b>${ACH_PTS[k]}</b></td></tr>`).join("")}</tbody></table>
