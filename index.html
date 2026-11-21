@@ -1534,6 +1534,7 @@ function computeRecords(disc){
   R.runs=[...S2].sort((a,b)=>b.best-a.best).topBy(10,(a,b)=>b.best-a.best);
   R.bag=[...S2].sort((a,b)=>b.bag-a.bag).topBy(10,(a,b)=>b.bag-a.bag);
   R.rivals=Object.values(pair).filter(o=>keep(o.a)&&keep(o.b)).sort((a,b)=>b.m-a.m).topBy(10,(a,b)=>b.m-a.m);
+  if(disc==="Doubles") R.privals=pairRivalries().filter(o=>[...o.a.split(" & "),...o.b.split(" & ")].every(keep)).topBy(10,(a,b)=>b.m-a.m);
   R.parts=Object.values(part).sort((a,b)=>b.w-a.w||b.m-a.m).topBy(10,(a,b)=>b.w-a.w||b.m-a.m);
   R.dec=[...S2].sort((a,b)=>b.dec-a.dec).topBy(10,(a,b)=>b.dec-a.dec);
   R.cb=[...S2].sort((a,b)=>b.cb-a.cb).topBy(10,(a,b)=>b.cb-a.cb);
@@ -1638,7 +1639,9 @@ function renderRecords(){
     R.pct.map(o=>tr([nb(o.n),[(100*o.w/o.m).toFixed(1)+"%"],[o.w],[o.m]])));
   h+=card("Longest winning runs","Consecutive matches won, across tournaments.",["Player","r:Run","From","To"],
     R.runs.map(o=>tr([nb(o.n),[o.best],`<span class="muted">${tN(o.bs)}</span>`,`<span class="muted">${tN(o.be)}</span>`])));
-  h+=card("Most-played rivalries",S.disc==="Doubles"?"Times two players have been on opposite sides of the court.":"Most meetings between two players.",["Rivalry","r:Met","r:Record"],
+  if(S.disc==="Doubles") h+=card("Most-played rivalries","Most meetings between the same two partnerships.",["Rivalry","r:Met","r:Record"],
+    R.privals.map(o=>tr([pairA(o.a)+' <span class="muted">v</span> '+pairA(o.b),[o.m],[`${o.wa}–${o.wb}`]])));
+  else h+=card("Most-played rivalries","Most meetings between two players.",["Rivalry","r:Met","r:Record"],
     R.rivals.map(o=>tr([nb(o.a)+' <span class="muted">v</span> '+nb(o.b),[o.m],[`${o.wa}–${o.wb}`]])));
   if(S.disc==="Doubles") h+=card("Most successful partnerships","Matches won together.",["Pair","r:Won","r:Played","r:Win %"],
     R.parts.map(o=>tr([nb(o.a)+" &amp; "+nb(o.b),[o.w],[o.m],[Math.round(100*o.w/o.m)+"%"]])));
@@ -2690,18 +2693,29 @@ function rivalries(disc){
       o.m++; ((m[6]===1)!==sw)?o.wa++:o.wb++; if(m[2]==="F")o.f++; if(se<o.first)o.first=se; if(se>o.last)o.last=se;}));});
   return RIV[k]=Object.values(pr).sort((p,q)=>q.m-p.m||q.f-p.f);
 }
+const PKEY=side=>side.slice().sort(SNC).join(" & "), PKC=(p,q)=>{ const P=p.split(" & "), Q=q.split(" & "); return SNC(P[0],Q[0])||SNC(P[1]||"",Q[1]||""); };
+function pairRivalries(){             // doubles: the same two partnerships on opposite sides of the court
+  const k="pairs"+(S.inclU?"|u":""); if(RIV[k]) return RIV[k];
+  const X=DATA.disc.Doubles, pr={};
+  X.matches.forEach(m=>{ if(!m[6]||!mOK("Doubles",m)||isWO(m)||HCAP("Doubles",m[0])||m[3].length!==2||m[4].length!==2) return; const se=(X.tinfo[m[0]]||[])[1]||"";
+    const p1=PKEY(m[3]), p2=PKEY(m[4]), sw=PKC(p1,p2)>0, x=sw?p2:p1, y=sw?p1:p2, kk=x+"|"+y, o=pr[kk]=pr[kk]||{a:x,b:y,pair:true,m:0,wa:0,wb:0,f:0,first:se,last:se};
+    o.m++; ((m[6]===1)!==sw)?o.wa++:o.wb++; if(m[2]==="F")o.f++; if(se<o.first)o.first=se; if(se>o.last)o.last=se; });
+  return RIV[k]=Object.values(pr).sort((p,q)=>q.m-p.m||q.f-p.f);
+}
+const pairA=k=>`<a href="#" data-pair="${esc(k)}">${esc(k)}</a>`;
 function renderRivals(){
-  const disc=S.disc, R=rivalries(disc), min=disc==="Singles"?8:10;
-  $("#riv-sub").textContent=(disc==="Doubles"?"Pairs of players who have met most often on opposite sides of the court":"The pairs of players who have met most often")+" in main-draw matches since 1994/95 (1996/97 and 1997/98 missing; walkovers, handicap events"+(S.inclU?"":", U25 and University events")+" left out). Click a rivalry for the full head-to-head.";
-  const who=o=>`<a href="#" data-riv="${esc(o.a)}|${esc(o.b)}">${esc(o.a)} <span class="muted">v</span> ${esc(o.b)}</a>`, span=o=>`<span class="muted" style="font-size:13px">${esc(o.first)}${o.last!==o.first?" – "+esc(o.last):""}</span>`;
+  const disc=S.disc, DP=disc==="Doubles", R=DP?pairRivalries():rivalries(disc), min=DP?6:8;
+  $("#riv-sub").textContent=(DP?"The partnerships that have met each other most often":"The pairs of players who have met most often")+" in main-draw matches since 1994/95 (1996/97 and 1997/98 missing; walkovers, handicap events"+(S.inclU?"":", U25 and University events")+" left out). Click a rivalry for the full head-to-head.";
+  const who=o=>o.pair?`${pairA(o.a)} <span class="muted">v</span> ${pairA(o.b)}`:`<a href="#" data-riv="${esc(o.a)}|${esc(o.b)}">${esc(o.a)} <span class="muted">v</span> ${esc(o.b)}</a>`, span=o=>`<span class="muted" style="font-size:13px">${esc(o.first)}${o.last!==o.first?" – "+esc(o.last):""}</span>`;
   const bar=o=>`${o.wa}–${o.wb}<span class="rvbar" title="${esc(o.a)} ${o.wa}, ${esc(o.b)} ${o.wb}"><i style="width:${Math.round(100*o.wa/(o.wa+o.wb||1))}%"></i></span>`;
-  const lead=o=>o.wa===o.wb?"level":`${esc((o.wa>o.wb?o.a:o.b).split(" ").slice(-1)[0])} leads`;
+  const lead=o=>o.wa===o.wb?"level":o.pair?`${esc((o.wa>o.wb?o.a:o.b).split(" & ").map(n=>n.split(" ").slice(-1)[0]).join(" & "))} lead`:`${esc((o.wa>o.wb?o.a:o.b).split(" ").slice(-1)[0])} leads`;
   const big=R.filter(o=>o.m>=min);
   let h=`<div class="recs">`;
-  h+=miniCard("Most-played rivalries","Most meetings.",["Rivalry","r:Met","Record","Seasons"],R.slice(0,15).map(o=>trow([who(o),[o.m],bar(o),span(o)])));
+  h+=miniCard("Most-played rivalries","Most meetings.",["Rivalry","r:Met","Record","Seasons"],R.topBy(15,(a,b)=>b.m-a.m).map(o=>trow([who(o),[o.m],bar(o),span(o)])));
   h+=miniCard("Closest rivalries",`Smallest gap in wins (${min}+ meetings).`,["Rivalry","r:Met","Record",""],[...big].sort((a,b)=>Math.abs(a.wa-a.wb)-Math.abs(b.wa-b.wb)||b.m-a.m).topBy(15,(a,b)=>Math.abs(a.wa-a.wb)-Math.abs(b.wa-b.wb)||b.m-a.m).map(o=>trow([who(o),[o.m],bar(o),`<span class="muted" style="font-size:13px">${lead(o)}</span>`])));
   h+=miniCard("Most one-sided",`Biggest gap in wins (${min}+ meetings).`,["Rivalry","r:Met","Record",""],[...big].sort((a,b)=>Math.abs(b.wa-b.wb)-Math.abs(a.wa-a.wb)||b.m-a.m).topBy(15,(a,b)=>Math.abs(b.wa-b.wb)-Math.abs(a.wa-a.wb)||b.m-a.m).map(o=>trow([who(o),[o.m],bar(o),`<span class="muted" style="font-size:13px">${lead(o)}</span>`])));
   h+=miniCard("Most finals against each other","Meetings in a final.",["Rivalry","r:Finals","r:Met","Seasons"],R.filter(o=>o.f>1).sort((a,b)=>b.f-a.f||b.m-a.m).topBy(15,(a,b)=>b.f-a.f||b.m-a.m).map(o=>trow([who(o),[o.f],[o.m],span(o)])));
+  if(DP){ const P=rivalries(disc); h+=miniCard("Players most often on opposite sides","Two players on opposite sides of the court, whoever their partners were.",["Players","r:Met","Record","Seasons"],P.topBy(15,(a,b)=>b.m-a.m).map(o=>trow([`<a href="#" data-riv="${esc(o.a)}|${esc(o.b)}">${esc(o.a)} <span class="muted">v</span> ${esc(o.b)}</a>`,[o.m],bar(o),span(o)]))); }
   $("#riv-body").innerHTML=h+`</div>`; compactCards($("#riv-body"));
 }
 function bracketHTML(ms,p){            // main-draw knockout as a draw sheet, built backwards from the final
