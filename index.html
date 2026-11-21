@@ -276,7 +276,7 @@ th.ch-s{color:var(--singles)}th.ch-d{color:var(--doubles)}
 .runyrs[hidden],.sp.run[hidden]{display:none}
 .ttab{table-layout:fixed;width:100%}.ttab th:nth-child(1){width:19%}.ttab th:nth-child(2),.ttab th:nth-child(4){width:62px}.ttab th:nth-child(3){width:26%}
 @media(max-width:640px){.ttab thead{display:none}.ttab tr{display:grid;grid-template-columns:30px minmax(0,.75fr) 30px minmax(0,1.25fr);align-items:start;column-gap:0}.ttab td:first-child{grid-column:1/-1;padding-bottom:0}.ttab td{border:0;padding:4px 3px;width:auto!important}.ttab tr{border-bottom:1px solid var(--line,#ddd)}
-  .ttab tr.natrow{background:color-mix(in srgb,#C9A227 9%,transparent)}.ttab tr.natrow td{background:transparent}
+  .ttab tr.natrow{background:color-mix(in srgb,#C9A227 9%,transparent)}.ttab tr.natrow td{background:transparent}.ttab tr.wbrow{background:color-mix(in srgb,#2F6DB5 14%,transparent)}.ttab tr.wbrow td:not(.na){background:transparent}
   .ttab .sp{font-size:11.5px;padding:1px 5px;white-space:normal;text-align:center}.ttab td.na{font-size:11px}}
 .sp{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;padding:1px 7px;margin:2px 3px 2px 0;border-radius:999px;font-size:12.5px;white-space:nowrap;background:color-mix(in srgb,var(--c) 14%,transparent);color:color-mix(in srgb,var(--c) 85%,var(--ink,#222));border:1px solid color-mix(in srgb,var(--c) 30%,transparent)}
 .cnt-heat{display:inline-block;min-width:26px;text-align:center;padding:2px 6px;border-radius:6px;font-weight:700}
@@ -1893,9 +1893,19 @@ function playerTitlesHTML(p){
   let h=`<h3 style="margin-top:14px">Titles (all time, singles and doubles)</h3>`;
   const CS="#1F4F8A", CD="#8B5A2B", CN="#B8860B", CF="#7B8794", CP="#0B7285", CB="#2F6DB5";
   const pill=(t,c)=>`<span class="sp" style="--c:${c}">${t}</span>`;
+  // Barnes Bridge wins: 3+ in a row with the same partner collapse into one range pill (as for open titles)
+  const wbRuns=()=>{ const all=[...new Set(WB.map(r=>r[0]))].sort(), ix=se=>all.indexOf(se), pt=r=>r[1].filter(x=>x!==p).join(", ");
+    const one=r=>WBL(r[0],pill(WY(r[0])+(r[1].length>1?` <span style="opacity:.75">(${esc(pt(r))})</span>`:""),CB));
+    const rows=wWon.slice().sort((a,b)=>a[0]<b[0]?-1:1), out=[]; let cur=[];
+    const flush=()=>{ if(!cur.length) return; if(cur.length<3) cur.forEach(r=>out.push(one(r))); else {
+        const n=cur.length, a=WY(cur[0][0]), b=WY(cur[n-1][0]), rng=a.slice(0,2)===b.slice(0,2)?`${a}–${b.slice(2)}`:`${a}–${b}`, k=Math.min(85,22+7*n), bw=n>=15?4:n>=10?3:n>=5?2:1;
+        out.push(`<span class="runwrap"><button class="sp run" data-runx style="--c:${CB};--k:${k}%;border:${bw}px solid ${CB};${k>55?"--rc:#fff;":""}" title="${n} in a row – click for each year">${rng}<i>×${n}</i>${pt(cur[0])?` <span style="opacity:.8;font-weight:400">(${esc(pt(cur[0]))})</span>`:""}</button><span class="runyrs" hidden>${cur.map(one).join("")}</span></span>`); }
+      cur=[]; };
+    rows.forEach(r=>{ const q=cur[cur.length-1]; if(q&&(ix(r[0])!==ix(q[0])+1||pt(r)!==pt(q))) flush(); cur.push(r); }); flush();
+    return out.join(""); };
   const wbRow=()=>{ if(!wWon.length&&!wLost.length) return "";
     return `<tr class="wbrow"><td style="white-space:nowrap"><b>Barnes Bridge</b> <span class="muted" style="font-size:12px">(Winchester)</span></td><td class="r na" title="Doubles only">–</td><td class="na muted" style="font-size:12.5px">Doubles only</td>`+
-     (wWon.length?`<td class="r"><span class="cnt-heat" style="background:${CB};color:#fff">${wWon.length}</span></td><td>${wWon.map(r=>WBL(r[0],pill(WY(r[0])+(r[1].length>1?` <span style="opacity:.75">(${esc(r[1].filter(x=>x!==p).join(", "))})</span>`:""),CB))).join("")}</td>`:`<td class="r">–</td><td class="muted" style="font-size:12.5px">No wins (runner-up ${wLost.length}×)</td>`)+`</tr>`; };
+     (wWon.length?`<td class="r"><span class="cnt-heat" style="background:${CB};color:#fff">${wWon.length}</span></td><td>${wbRuns()}</td>`:`<td class="r">–</td><td class="muted" style="font-size:12.5px">No wins (runner-up ${wLost.length}×)</td>`)+`</tr>`; };
   if((o&&o.S+o.D)||hasW){
     if(!o||!(o.S+o.D)){ h+=`<p class="sub">No open tournament titles recorded.</p>`; }
   }
@@ -1911,7 +1921,7 @@ function playerTitlesHTML(p){
       if(e==="South East"&&d==="Doubles") return "Drawn partners – not an open title";
       if(e==="Puckle Cup"&&d==="Singles") return "Doubles only";
       const h=H[e+"|"+d]||[]; if(!h.length) return "Not held as an open event";
-      if(!h.some(x=>x>=f&&x<=l)) return h[0]>l?`Not held until ${h[0]}`:`Last held ${h[h.length-1]}`;
+      if(!h.some(x=>x>=f&&x<=l)) return h[0]>l?`Not held until ${evYear(e,h[0],d)}`:`Last held ${evYear(e,h[h.length-1],d)}`;
       if(e==="Scotland"&&d==="Doubles"&&!h.some(x=>x>=f&&x<=l&&(x<"1990/91"||x>="2024/25"))) return "Not an open event 1990/91–2023/24";
       return ""; };
     const na=t=>`<td class="r na" title="${esc(t)}">–</td><td class="na muted" style="font-size:12.5px">${esc(t)}</td>`;
