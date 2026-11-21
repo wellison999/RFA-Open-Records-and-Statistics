@@ -274,7 +274,10 @@ th.ch-s{color:var(--singles)}th.ch-d{color:var(--doubles)}
 .sp.run{cursor:pointer;font:inherit;font-size:12.5px;background:color-mix(in srgb,var(--c) var(--k,30%),transparent);color:var(--rc,inherit);border:1px solid color-mix(in srgb,var(--c) 45%,transparent);font-weight:600}
 .sp.run i{font-style:normal;font-weight:400;opacity:.8;margin-left:3px}
 .runyrs[hidden],.sp.run[hidden]{display:none}
-@media(max-width:640px){.ttab thead{display:none}.ttab tr{display:grid;grid-template-columns:34px 1fr 34px 1fr;align-items:start;column-gap:2px}.ttab td:first-child{grid-column:1/-1;padding-bottom:0}.ttab td{border:0;padding:4px 2px}.ttab tr{border-bottom:1px solid var(--line,#ddd)}.ttab .sp{font-size:11.5px;padding:1px 5px;white-space:normal;text-align:left}.ttab td.na{font-size:11px}}
+.ttab{table-layout:fixed;width:100%}.ttab th:nth-child(1){width:19%}.ttab th:nth-child(2),.ttab th:nth-child(4){width:62px}.ttab th:nth-child(3){width:26%}
+@media(max-width:640px){.ttab thead{display:none}.ttab tr{display:grid;grid-template-columns:30px minmax(0,.75fr) 30px minmax(0,1.25fr);align-items:start;column-gap:0}.ttab td:first-child{grid-column:1/-1;padding-bottom:0}.ttab td{border:0;padding:4px 3px;width:auto!important}.ttab tr{border-bottom:1px solid var(--line,#ddd)}
+  .ttab tr.natrow{background:color-mix(in srgb,#C9A227 9%,transparent)}.ttab tr.natrow td{background:transparent}
+  .ttab .sp{font-size:11.5px;padding:1px 5px;white-space:normal;text-align:center}.ttab td.na{font-size:11px}}
 .sp{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;padding:1px 7px;margin:2px 3px 2px 0;border-radius:999px;font-size:12.5px;white-space:nowrap;background:color-mix(in srgb,var(--c) 14%,transparent);color:color-mix(in srgb,var(--c) 85%,var(--ink,#222));border:1px solid color-mix(in srgb,var(--c) 30%,transparent)}
 .cnt-heat{display:inline-block;min-width:26px;text-align:center;padding:2px 6px;border-radius:6px;font-weight:700}
 .rec-head{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:6px 0 4px}
