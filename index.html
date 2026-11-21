@@ -611,7 +611,7 @@ h2{font-size:22px} h3{font-size:16.5px}
   <section id="tab-winch" hidden>
     <div class="panel">
       <h2>Winchester Fives – the Barnes Bridge</h2>
-      <p class="sub">The national Winchester Fives doubles championship, played for the Barnes Bridge since 1982. It doesn't count towards the rankings or head-to-heads, but Barnes Bridge titles and final appearances do score achievement points. Winners from the RFA's Barnes Bridge history and news reports; match results from the season reports (2001/02 to 2018/19) and the RFA news reports since (2019/20 on; not held in 2020/21).</p>
+      <p class="sub">The national Winchester Fives doubles championship, played for the Barnes Bridge since 1982. It doesn't count towards the rankings or head-to-heads, but Barnes Bridge titles and final appearances do score achievement points. Winners from the RFA's Barnes Bridge history and news reports; match results from the season reports (2002 to 2019) and the RFA news reports since (2020 on; not held in 2021).</p>
       <div class="row subtabs" role="group" aria-label="View">
         <button class="btn" data-wsub="roll">Roll of honour</button>
         <button class="btn" data-wsub="results">Results &amp; draws</button>
@@ -1888,7 +1888,7 @@ function playerTitlesHTML(p){
   const pill=(t,c)=>`<span class="sp" style="--c:${c}">${t}</span>`;
   const wbRow=()=>{ if(!wWon.length&&!wLost.length) return "";
     return `<tr class="wbrow"><td style="white-space:nowrap"><b>Barnes Bridge</b> <span class="muted" style="font-size:12px">(Winchester)</span></td><td class="r na" title="Doubles only">–</td><td class="na muted" style="font-size:12.5px">Doubles only</td>`+
-     (wWon.length?`<td class="r"><span class="cnt-heat" style="background:${CB};color:#fff">${wWon.length}</span></td><td>${wWon.map(r=>WBL(r[0],pill(esc(r[0])+(r[1].length>1?` <span style="opacity:.75">(${esc(r[1].filter(x=>x!==p).join(", "))})</span>`:""),CB))).join("")}</td>`:`<td class="r">–</td><td class="muted" style="font-size:12.5px">No wins (runner-up ${wLost.length}×)</td>`)+`</tr>`; };
+     (wWon.length?`<td class="r"><span class="cnt-heat" style="background:${CB};color:#fff">${wWon.length}</span></td><td>${wWon.map(r=>WBL(r[0],pill(WY(r[0])+(r[1].length>1?` <span style="opacity:.75">(${esc(r[1].filter(x=>x!==p).join(", "))})</span>`:""),CB))).join("")}</td>`:`<td class="r">–</td><td class="muted" style="font-size:12.5px">No wins (runner-up ${wLost.length}×)</td>`)+`</tr>`; };
   if((o&&o.S+o.D)||hasW){
     if(!o||!(o.S+o.D)){ h+=`<p class="sub">No open tournament titles recorded.</p>`; }
   }
@@ -1921,7 +1921,7 @@ function playerTitlesHTML(p){
   }
   if(wLost.length||wMs.length){
     let wn=0,ls=0; wMs.forEach(m=>{const side=m[3].includes(p)?1:2; if(m[6]) m[6]===side?wn++:ls++;});
-    h+=`<p class="sub" style="margin-top:6px"><b>Barnes Bridge (Winchester):</b> ${wLost.length?`runner-up ${wLost.length}× – ${wLost.map(r=>WBL(r[0],esc(r[0]))).join(", ")}. `:""}${wMs.length?`Recorded matches ${wn}–${ls}. `:""}<a href="#" data-tab="winch">Winchester tab</a></p>`;
+    h+=`<p class="sub" style="margin-top:6px"><b>Barnes Bridge (Winchester):</b> ${wLost.length?`runner-up ${wLost.length}× – ${wLost.map(r=>WBL(r[0],WY(r[0]))).join(", ")}. `:""}${wMs.length?`Recorded matches ${wn}–${ls}. `:""}<a href="#" data-tab="winch">Winchester tab</a></p>`;
   }
   if(o&&(o.nsF||o.ndF)){
     const lost=L.filter(r=>isNat(r[0])&&r[4].includes(p));
@@ -2148,12 +2148,12 @@ function renderWinch(){
   $("#wi-q").value=S.wq;
   const seasons=[...new Set(M.map(m=>m[0]))].sort().reverse();
   if(!S.wse||!seasons.includes(S.wse)) S.wse=seasons[0]||"";
-  $("#wi-se").innerHTML=seasons.map(x=>`<option${x===S.wse?" selected":""}>${esc(x)}</option>`).join("");
+  $("#wi-se").innerHTML=seasons.map(x=>`<option value="${esc(x)}"${x===S.wse?" selected":""}>${WY(x)}</option>`).join("");
   const q=S.wq.trim().toLowerCase(); let h="";
   if(S.wsub==="roll"){
     const rows=W.filter(r=>!q||r[1].concat(r[2]).some(n=>n.toLowerCase().includes(q))).slice().reverse();
-    h=`<div class="tablewrap" style="margin-top:12px"><table><thead><tr><th>Season</th><th>Winners</th><th>Runners-up</th><th>Venue</th></tr></thead><tbody>`+
-      rows.map(r=>`<tr${q&&r[1].some(n=>n.toLowerCase().includes(q))?' class="sel"':""}><td>${hasWinch(r[0])?WBL(r[0],esc(r[0])):`<a href="#" data-season="${esc(r[0])}">${esc(r[0])}</a>`}</td><td>${ppl(r[1])}</td><td class="muted">${r[2].length?ppl(r[2]):""}</td><td>${vTag(venueEv("Winchester Doubles",r[0]))}</td></tr>`).join("")+`</tbody></table></div>`;
+    h=`<div class="tablewrap" style="margin-top:12px"><table><thead><tr><th>Year</th><th>Winners</th><th>Runners-up</th><th>Venue</th></tr></thead><tbody>`+
+      rows.map(r=>`<tr${q&&r[1].some(n=>n.toLowerCase().includes(q))?' class="sel"':""}><td>${hasWinch(r[0])?WBL(r[0],WY(r[0])):`<a href="#" data-season="${esc(r[0])}" title="Season ${esc(r[0])}">${WY(r[0])}</a>`}</td><td>${ppl(r[1])}</td><td class="muted">${r[2].length?ppl(r[2]):""}</td><td>${vTag(venueEv("Winchester Doubles",r[0]))}</td></tr>`).join("")+`</tbody></table></div>`;
   } else if(S.wsub==="results"){
     const ms=winchMs(S.wse), title=W.find(r=>r[0]===S.wse);
     const champ=title?title[1].slice().sort(SNC).join("|"):"";
@@ -2161,11 +2161,11 @@ function renderWinch(){
       return `<tr${mine?' class="natrow"':""}><td class="muted" style="white-space:nowrap">${esc((WDRAW[m[1]]||"")+(WRN[m[2]]||m[2]))}</td><td><b>${ppl(m[3])}</b> <span class="muted">bt</span> ${ppl(m[4])}</td><td>${m[5]?esc(m[5]):NSc(m)}</td></tr>`;};
     const ord=m=>["M","P","P2","P3"].indexOf(m[1])*20+WRD.indexOf(m[2]);
     const brk=bracketHTML(ms,""), dv=!!brk&&S.wdv!=="list";            // Draw / Results switch (15 Nov 2026), opens on the draw like the tournament pop-up
-    h=(title?`<p class="sub" style="margin-top:12px">Barnes Bridge ${esc(S.wse)}${venueEv("Winchester Doubles",S.wse)?` ${vTag(venueEv("Winchester Doubles",S.wse))}`:""}: <b>${ppl(title[1])}</b>${title[2].length?` beat ${ppl(title[2])} in the final`:""}.${dv?"":" The champions' matches are highlighted."}</p>`:"")+
+    h=(title?`<p class="sub" style="margin-top:12px">Barnes Bridge ${WY(S.wse)}${venueEv("Winchester Doubles",S.wse)?` ${vTag(venueEv("Winchester Doubles",S.wse))}`:""}: <b>${ppl(title[1])}</b>${title[2].length?` beat ${ppl(title[2])} in the final`:""}.${dv?"":" The champions' matches are highlighted."}</p>`:"")+
       (brk?`<div class="row subtabs" style="margin:4px 0 10px"><button class="btn" data-wdv="list" aria-pressed="${!dv}">Results</button><button class="btn" data-wdv="draw" aria-pressed="${dv}">Draw</button></div>`:"")+
       (dv?`<div class="tablewrap" style="max-height:none;overflow-x:auto">${brk}</div>`+(ms.some(m=>m[1]!=="M")?`<p class="sub" style="margin-top:10px">Plate results are under <a href="#" data-wdv="list">Results</a>.</p>`:"")+winchGroupsHTML(S.wse,"")
          :(ms.length?`<div class="tablewrap" style="max-height:none"><table><tbody>${ms.slice().sort((a,b)=>ord(a)-ord(b)).map(row).join("")}</tbody></table></div>`:`<p class="empty">No match results recorded for this season.</p>`)+winchGroupsHTML(S.wse,""))+
-      `<p class="caveat" style="margin-top:12px">From the RFA season reports up to 2018/19, the RFA's news reports from 2019/20, and Will Ellison's results record; each match is listed once. Older reports often miss early rounds, group matches and plate details. Names given only as initials are matched to players known elsewhere where that's unambiguous.</p>`;
+      `<p class="caveat" style="margin-top:12px">From the RFA season reports up to 2019, the RFA's news reports from 2020, and Will Ellison's results record; each match is listed once. Older reports often miss early rounds, group matches and plate details. Names given only as initials are matched to players known elsewhere where that's unambiguous.</p>`;
   } else {
     const c={}, fin={}, pairs={}, partners={};
     W.forEach(r=>{ r[1].forEach(n=>{c[n]=(c[n]||0)+1; (partners[n]=partners[n]||new Set()); r[1].filter(x=>x!==n).forEach(x=>partners[n].add(x));});
@@ -2178,12 +2178,12 @@ function renderWinch(){
     const same=[]; W.forEach(r=>r[1].forEach(n=>{ if(L.some(t=>t[0]==="National Doubles"&&t[2]===r[0]&&t[3].includes(n))) same.push({n,se:r[0]}); }));
     h=`<div class="recs" style="margin-top:12px">`+
       miniCard("Most Barnes Bridge titles","",["Player","r:Titles"],Object.entries(c).sort((a,b)=>b[1]-a[1]).topBy(12,(a,b)=>b[1]-a[1]).map(([n,k])=>trow([TIP(n),[k]])))+
-      miniCard("Most successful pairs","",["Pair","r:Titles","Seasons"],Object.entries(pairs).sort((a,b)=>b[1].length-a[1].length).topBy(10,(a,b)=>b[1].length-a[1].length).map(([k,ss])=>trow([ppl(k.split(" & ")),[ss.length],`<span class="muted">${ss.map(x=>WBL(x,esc(x))).join(", ")}</span>`])))+
-      miniCard("Longest winning runs","Consecutive Barnes Bridges won (2021 wasn't held).",["Player","r:In a row","Seasons"],runs.sort((a,b)=>b.run-a.run).topBy(10,(a,b)=>b.run-a.run).map(o=>trow([TIP(o.n),[o.run],`<span class="muted">${WBL(o.from,esc(o.from))}–${WBL(o.to,esc(o.to))}</span>`])))+
+      miniCard("Most successful pairs","",["Pair","r:Titles","Years"],Object.entries(pairs).sort((a,b)=>b[1].length-a[1].length).topBy(10,(a,b)=>b[1].length-a[1].length).map(([k,ss])=>trow([ppl(k.split(" & ")),[ss.length],`<span class="muted">${ss.map(x=>WBL(x,WY(x))).join(", ")}</span>`])))+
+      miniCard("Longest winning runs","Consecutive Barnes Bridges won (2021 wasn't held).",["Player","r:In a row","Years"],runs.sort((a,b)=>b.run-a.run).topBy(10,(a,b)=>b.run-a.run).map(o=>trow([TIP(o.n),[o.run],`<span class="muted">${WBL(o.from,WY(o.from))}–${WBL(o.to,WY(o.to))}</span>`])))+
       miniCard("Most finals","Runners-up are only known for some years.",["Player","r:Finals","r:Won"],Object.entries(fin).sort((a,b)=>b[1].f-a[1].f||b[1].w-a[1].w).topBy(10,(a,b)=>b[1].f-a[1].f||b[1].w-a[1].w).map(([n,o])=>trow([TIP(n),[o.f],[o.w]])))+
       miniCard("Most title-winning partners","",["Player","r:Partners"],Object.entries(partners).sort((a,b)=>b[1].size-a[1].size).topBy(8,(a,b)=>b[1].size-a[1].size).map(([n,st])=>trow([TIP(n),[st.size]])))+
       miniCard("Two-code champions","Barnes Bridge winners who have also won Rugby Fives open titles.",["Player","r:Barnes Bridge","r:Rugby titles","r:National Doubles"],two.map(o=>trow([TIP(o.n),[o.b],[o.r],[o.nd]])))+
-      miniCard("Same-season national doubles","Won the Rugby Fives National Doubles and the Barnes Bridge in the same season.",["Player","Season"],same.map(o=>trow([TIP(o.n),WBL(o.se,esc(o.se))])),false)+`</div>`;
+      miniCard("Same-season national doubles","Won the Rugby Fives National Doubles and the Barnes Bridge in the same season.",["Player","Year"],same.map(o=>trow([TIP(o.n),WBL(o.se,WY(o.se))])),false)+`</div>`;
   }
   $("#wi-body").innerHTML=h;
 }
@@ -2191,6 +2191,7 @@ function renderWinch(){
 const WDRAW={M:"",P:"Plate – ",P2:"2nd plate – ",P3:"3rd plate – "}, WRN=Object.assign({},RNAME,{"3P":"Third-place play-off"});
 const WRD=["F","3P","SF","QF","R16","R32","R64","R128","RR"];
 const hasWinch=se=>(TT().winchMatches||[]).some(m=>m[0]===se);
+const WY=se=>{ const y=+String(se).slice(0,4); return isNaN(y)?esc(se):String(y+1); };   // Barnes Bridge is played in March: shown as that year (Will, 21 Nov 2026)
 const WBL=(se,txt)=>hasWinch(se)?`<a href="#" data-winch="${esc(se)}" title="Results and draw">${txt}</a>`:txt;   // a Barnes Bridge season linked to its draw
 function winchMs(se){       // the season's matches in the same shape as open-tournament matches
   return (TT().winchMatches||[]).filter(m=>m[0]===se).map(m=>{ const sc=/\d/.test(m[5]||"")?m[5]:"";
@@ -2209,7 +2210,7 @@ function openWinch(se,p){
     return `<tr class="${me?"me":""}"><td><b>${ppl(m[3])}</b> <span class="muted">bt</span> ${ppl(m[4])}</td><td>${m[5]?esc(m[5]):NSc(m)}</td><td class="muted"></td></tr>`; };
   const grp=draw=>{ const by={}; ms.filter(m=>m[1]===draw).forEach(m=>(by[m[2]]=by[m[2]]||[]).push(m));
     return Object.keys(by).sort((a,b)=>(WRD.indexOf(a)+99*(WRD.indexOf(a)<0))-(WRD.indexOf(b)+99*(WRD.indexOf(b)<0))).map(k=>`<h4>${WDRAW[draw]||""}${esc(WRN[k]||k)}</h4><table class="tdt"><colgroup><col class="c1"><col class="c2"><col class="c3"></colgroup><tbody>${by[k].map(line).join("")}</tbody></table>`).join(""); };
-  $("#tdlg-title").innerHTML=`Barnes Bridge ${esc(se)} – Winchester Fives${vn?` <span style="font-size:15px;font-weight:400">${vTag(vn)}</span>`:""}`;
+  $("#tdlg-title").innerHTML=`Barnes Bridge ${WY(se)} – Winchester Fives${vn?` <span style="font-size:15px;font-weight:400">${vTag(vn)}</span>`:""}`;
   const brk=bracketHTML(ms,p), dv=!!brk;
   const head=`<p class="sub" style="margin:0 0 10px">${title?`<b>${ppl(title[1])}</b>${title[2].length?` beat ${ppl(title[2])} in the final`:" won"}. `:""}<a href="#" data-season="${esc(se)}">Season ${esc(se)} ›</a> · <a href="#" data-tab="winch">Winchester Fives ›</a></p>`;
   const src=[srcs.has("season report")?"the RFA season report":"",srcs.has("news report")?"the RFA news report":"",srcs.has("results record")?"Will Ellison's results record":""].filter(Boolean);
@@ -2223,7 +2224,7 @@ function playerWinchHTML(p){
   const won=W.filter(r=>r[1].includes(p)), lost=W.filter(r=>r[2].includes(p));
   const ms=M.filter(m=>m[3].includes(p)||m[4].includes(p)); if(!won.length&&!lost.length&&!ms.length) return "";
   let wn=0,ls=0; ms.forEach(m=>{const side=m[3].includes(p)?1:2; if(m[6]) m[6]===side?wn++:ls++;});
-  return `<h3 style="margin-top:26px">Winchester Fives</h3><p class="sub">${won.length?`<b>Barnes Bridge champion ${won.length}×</b>: ${won.map(r=>`${WBL(r[0],esc(r[0]))} (${esc(r[1].filter(x=>x!==p).join(", "))})`).join(", ")}. `:""}${lost.length?`Runner-up ${lost.length}×: ${lost.map(r=>WBL(r[0],esc(r[0]))).join(", ")}. `:""}${ms.length?`Recorded matches ${wn}–${ls}. `:""}<a href="#" data-tab="winch">Winchester Fives tab</a></p>`;
+  return `<h3 style="margin-top:26px">Winchester Fives</h3><p class="sub">${won.length?`<b>Barnes Bridge champion ${won.length}×</b>: ${won.map(r=>`${WBL(r[0],WY(r[0]))} (${esc(r[1].filter(x=>x!==p).join(", "))})`).join(", ")}. `:""}${lost.length?`Runner-up ${lost.length}×: ${lost.map(r=>WBL(r[0],WY(r[0]))).join(", ")}. `:""}${ms.length?`Recorded matches ${wn}–${ls}. `:""}<a href="#" data-tab="winch">Winchester Fives tab</a></p>`;
 }
 
 /* ---------------- upsets (Elo before each match) ---------------- */
