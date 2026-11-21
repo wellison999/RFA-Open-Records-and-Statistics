@@ -1957,7 +1957,15 @@ function playerTitlesHTML(p){
   }
   if(o&&(o.nsF||o.ndF)){
     const lost=L.filter(r=>isNat(r[0])&&r[4].includes(p));
-    h+=`<p class="sub" style="margin-top:10px"><b>National finals lost</b> (${o.nsF} singles, ${o.ndF} doubles): ${lost.map(r=>TLt(r,pill(`${r[1]==="Singles"?"NS":"ND"} ${rYear(r)}`,CF))).join("")}</p>`;
+    h+=`<p class="sub" style="margin-top:10px"><b>National finals lost</b> (${o.nsF} singles, ${o.ndF} doubles): ${["Singles","Doubles"].map(d=>{ // singles first, then doubles; 3+ finals lost in a row collapse into one range pill
+      const rows=lost.filter(r=>r[1]===d), Hh=titleIndex().held, all=[...new Set(Hh[(d==="Singles"?"National Singles":"National Doubles")+"|"+d]||[])].sort(), tag=d==="Singles"?"NS":"ND";
+      const one=r=>TLt(r,pill(`${tag} ${rYear(r)}`,CF)), out=[]; let cur=[];
+      const flush=()=>{ if(!cur.length) return; if(cur.length<3) cur.forEach(r=>out.push(one(r))); else {
+          const n=cur.length, a=String(evYear0(cur[0][0],cur[0][2],d)), b=String(evYear0(cur[n-1][0],cur[n-1][2],d)), rng=a.slice(0,2)===b.slice(0,2)?`${a}–${b.slice(2)}`:`${a}–${b}`, k=Math.min(85,22+7*n), bw=n>=15?4:n>=10?3:n>=5?2:1;
+          out.push(`<span class="runwrap"><button class="sp run" data-runx style="--c:${CF};--k:${k}%;border:${bw}px solid ${CF};${k>55?"--rc:#fff;":""}" title="${n} finals lost in a row – click for each year">${tag} ${rng}<i>×${n}</i></button><span class="runyrs" hidden>${cur.map(one).join("")}</span></span>`); }
+        cur=[]; };
+      rows.forEach(r=>{ const q=cur[cur.length-1]; if(q&&all.indexOf(r[2])!==all.indexOf(q[2])+1) flush(); cur.push(r); }); flush();
+      return out.join(""); }).join("")}</p>`;
   }
   if(plates.length) h+=`<p class="sub" style="margin-top:8px"><b>Plate wins (${plates.length}):</b> ${plates.map(r=>pill(`${esc(evL(r[0]))} ${r[1]==="Doubles"?"doubles ":""}${r[3]!=="Plate"?esc(r[3].toLowerCase())+" ":""}${rYear(r)}`,CP)).join("")}</p>`;
   const A=achieveIndex().by[p];
