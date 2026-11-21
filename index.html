@@ -271,6 +271,10 @@ td.cs{background:color-mix(in srgb,var(--singles) 6%,transparent)}td.cd{backgrou
 th.ch-s{color:var(--singles)}th.ch-d{color:var(--doubles)}
 #tv-d .btn[aria-pressed="true"],#se-prev:not(:disabled):hover,#se-next:not(:disabled):hover{background:var(--accent);color:#fff;border-color:var(--accent)}
 .pt-stat{border-top:4px solid var(--c);border-radius:6px}.pt-stat .num{color:var(--c)}
+.sp.run{cursor:pointer;font:inherit;font-size:12.5px;background:color-mix(in srgb,var(--c) var(--k,30%),transparent);color:var(--rc,inherit);border:1px solid color-mix(in srgb,var(--c) 45%,transparent);font-weight:600}
+.sp.run i{font-style:normal;font-weight:400;opacity:.8;margin-left:3px}
+.runyrs[hidden],.sp.run[hidden]{display:none}
+@media(max-width:640px){.ttab thead{display:none}.ttab tr{display:grid;grid-template-columns:46px 1fr;align-items:center}.ttab td:first-child{grid-column:1/-1;padding-bottom:0}.ttab td{border:0}.ttab tr{border-bottom:1px solid var(--line,#ddd)}}
 .sp{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;padding:1px 7px;margin:2px 3px 2px 0;border-radius:999px;font-size:12.5px;white-space:nowrap;background:color-mix(in srgb,var(--c) 14%,transparent);color:color-mix(in srgb,var(--c) 85%,var(--ink,#222));border:1px solid color-mix(in srgb,var(--c) 30%,transparent)}
 .cnt-heat{display:inline-block;min-width:26px;text-align:center;padding:2px 6px;border-radius:6px;font-weight:700}
 .rec-head{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:6px 0 4px}
@@ -1908,16 +1912,30 @@ function playerTitlesHTML(p){
       if(e==="Scotland"&&d==="Doubles"&&!h.some(x=>x>=f&&x<=l&&(x<"1990/91"||x>="2024/25"))) return "Not an open event 1990/91–2023/24";
       return ""; };
     const na=t=>`<td class="r na" title="${esc(t)}">–</td><td class="na muted" style="font-size:12.5px">${esc(t)}</td>`;
+    // unbroken runs (consecutive editions held; doubles: same partner) shown as one range pill, deeper colour for longer runs; click to see each year
+    const runPills=(rows,c,lab)=>{ const out=[]; let cur=[];
+      const key=r=>r[1]==="Doubles"?r[3].filter(x=>x!==p).join(", "):"";
+      const idx=r=>{ const h=[...new Set(H[r[0]+"|"+r[1]]||[])].sort(); return h.indexOf(r[2]); };
+      const flush=()=>{ if(!cur.length) return;
+        if(cur.length<3) cur.forEach(r=>out.push(TLt(r,pill(lab(r),c))));
+        else { const a=evYear0(cur[0][0],cur[0][2],cur[0][1]), b=evYear0(cur[cur.length-1][0],cur[cur.length-1][2],cur[cur.length-1][1]), n=cur.length;
+          const yb=String(b), rng=String(a).slice(0,2)===yb.slice(0,2)?`${a}–${yb.slice(2)}`:`${a}–${yb}`, k=Math.min(85,22+7*n), pt=key(cur[0]);
+          out.push(`<span class="runwrap"><button class="sp run" data-runx style="--c:${c};--k:${k}%;${k>55?"--rc:#fff;":""}" title="${n} in a row – click for each year">${rng}<i>×${n}</i>${pt?` <span style="opacity:.8;font-weight:400">(${esc(pt)})</span>`:""}</button><span class="runyrs" hidden>${cur.map(r=>TLt(r,pill(lab(r),c))).join("")}</span></span>`); }
+        cur=[]; };
+      rows.forEach(r=>{ const q=cur[cur.length-1]; if(q&&(idx(r)!==idx(q)+1||key(r)!==key(q))) flush(); cur.push(r); }); flush();
+      return out.join(""); };
+    const labD=r=>rYear(r)+(r[3].length>1?` <span style="opacity:.75">(${esc(r[3].filter(x=>x!==p).join(", "))})</span>`:"");
     const ORD=["Nationals",...EV_ORDER.filter(e=>!isNat(e))];
 
-    h+=`<div class="tablewrap" style="max-height:none;margin-top:8px"><table><thead><tr><th>Tournament</th><th class="r">Singles</th><th>Years</th><th class="r">Doubles</th><th>Years (partner)</th></tr></thead><tbody>`+
+    h+=`<div class="tablewrap" style="max-height:none;margin-top:8px"><table class="ttab"><thead><tr><th>Tournament</th><th class="r">Singles</th><th>Years</th><th class="r">Doubles</th><th>Years (partner)</th></tr></thead><tbody>`+
       ORD.filter(e=>g[e]).map(e=>{const nat=e==="Nationals", cS=nat?CN:CS, cD=nat?CN:CD, wS=g[e].S.length?"":why(e,"Singles"), wD=g[e].D.length?"":why(e,"Doubles");
         return `<tr${nat?' class="natrow"':""}><td style="white-space:nowrap">${nat?svg("trophy",CN,16)+" <b>National Championships</b>":esc(evL(e))}</td>`+
-        (wS?na(wS):`<td class="r">${heat(g[e].S.length,cS)}</td><td>${g[e].S.map(r=>TLt(r,pill(rYear(r),cS))).join("")}</td>`)+
-        (wD?na(wD):`<td class="r">${heat(g[e].D.length,cD)}</td><td>${g[e].D.map(r=>TLt(r,pill(rYear(r)+(r[3].length>1?` <span style="opacity:.75">(${esc(r[3].filter(x=>x!==p).join(", "))})</span>`:""),cD))).join("")}</td>`)+`</tr>`;}).join("")+wbRow()+`</tbody></table></div>`;
+        (wS?na(wS):`<td class="r">${heat(g[e].S.length,cS)}</td><td>${runPills(g[e].S,cS,r=>rYear(r))}</td>`)+
+        (wD?na(wD):`<td class="r">${heat(g[e].D.length,cD)}</td><td>${runPills(g[e].D,cD,labD)}</td>`)+`</tr>`;}).join("")+wbRow()+`</tbody></table></div>`;
+    if(/data-runx/.test(h)) h+=`<p style="margin:6px 0 0"><button class="btn" data-runall style="font-size:12.5px;padding:2px 10px">Show every year</button> <span class="muted" style="font-size:12.5px">Runs of three or more in a row are grouped; deeper colour = longer run.</span></p>`;
   }
   else if(wWon.length||wLost.length){
-    h+=`<div class="tablewrap" style="max-height:none;margin-top:8px"><table><thead><tr><th>Tournament</th><th class="r">Singles</th><th>Years</th><th class="r">Doubles</th><th>Years (partner)</th></tr></thead><tbody>${wbRow()}</tbody></table></div>`;
+    h+=`<div class="tablewrap" style="max-height:none;margin-top:8px"><table class="ttab"><thead><tr><th>Tournament</th><th class="r">Singles</th><th>Years</th><th class="r">Doubles</th><th>Years (partner)</th></tr></thead><tbody>${wbRow()}</tbody></table></div>`;
   }
   if(wLost.length||wMs.length){
     let wn=0,ls=0; wMs.forEach(m=>{const side=m[3].includes(p)?1:2; if(m[6]) m[6]===side?wn++:ls++;});
@@ -2627,6 +2645,10 @@ function titleRunsCard(){
     ${seg("nat",[["1","All open"],["0","Regional only"],["2","National only"]])}${seg("hd",[["0","Tournaments entered"],["1","Every edition held"]])}${seg("m",[["Overall","Overall"],["Singles","Singles"],["Doubles","Doubles"]],S.disc)}
     ${views}</div>`;
 }
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest("[data-runx],[data-runall]"); if(!b) return; e.preventDefault();
+  const open=w=>{ const btn=w.querySelector("[data-runx]"), y=w.querySelector(".runyrs"); if(btn) btn.hidden=true; if(y) y.hidden=false; };
+  if(b.dataset.runall!==undefined){ const sec=b.closest("section")||document; sec.querySelectorAll(".runwrap").forEach(open); b.parentNode.remove(); }
+  else open(b.closest(".runwrap")); });
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest("[data-nrk]"); if(!b) return; const card=b.closest("[data-nrcard]");
   card.querySelectorAll("[data-nrk]").forEach(x=>x.setAttribute("aria-pressed",x===b));
   card.querySelectorAll("[data-nrview]").forEach(x=>x.hidden=x.dataset.nrview!==b.dataset.nrk); });
