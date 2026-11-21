@@ -747,8 +747,15 @@ h2{font-size:22px} h3{font-size:16.5px}
 })();
 </script>
 <script type="text/plain" id="app">
+const TIE_NAME=x=>{ if(typeof x==="string") return x; if(Array.isArray(x)) return typeof x[0]==="string"?x[0]:"";
+  if(x&&typeof x==="object") for(const f of ["n","name","k","p","pl","a"]) if(typeof x[f]==="string") return x[f]; return ""; };
+const TIE_NAME_CMP=(x,y)=>{ // players on the same numbers: surname, then first name (pairs: first partner, then second)
+  const p=TIE_NAME(x), q=TIE_NAME(y); if(!p||!q) return 0;
+  if(typeof EV_ORDER!=="undefined"&&(EV_ORDER.includes(p)||EV_ORDER.includes(q))) return p.localeCompare(q);
+  const P=p.split(" & "), Q=q.split(" & ");
+  for(let i=0;i<Math.max(P.length,Q.length);i++){ const c=SNC(P[i]||"",Q[i]||""); if(c) return c; } return 0; };
 Object.defineProperty(Array.prototype,"topBy",{value:function(n,cmp){ // top n, never splitting a group with the same numbers
-  const a=this; if(a.length<=n) return a.slice(); const v=a[n-1], same=x=>cmp(x,v)===0;
+  const a=this.slice().sort((x,y)=>cmp(x,y)||TIE_NAME_CMP(x,y)); if(a.length<=n) return a; const v=a[n-1], same=x=>cmp(x,v)===0;
   let s=n-1; while(s>0&&same(a[s-1])) s--; let e=n; while(e<a.length&&same(a[e])) e++;
   if(e===n) return a.slice(0,n);
   if(e<=n+Math.max(3,Math.ceil(n/2))) return a.slice(0,e);   // a few extra rows: show the whole group
