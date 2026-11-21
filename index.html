@@ -2097,7 +2097,7 @@ const RUNK=["nat3","nat5","nat10","nat15","reg5","reg10","reg15","reg20"];
 const RN=(a,d)=>{a.rn=a.rn||{S:Object.fromEntries(RUNK.map(k=>[k,0])),D:Object.fromEntries(RUNK.map(k=>[k,0]))}; return a.rn[d];};
 const VKEYS={S:["nsW","nsF","firstNS","rS","y1S","y3S","y10S","swS","psS","eraS"],D:["ndW","ndF","firstND","rD","y1D","y3D","y10D","swD","psD","wW","wF","eraD"]};
 const VNAME={all:"",S:"Singles ",D:"Doubles "};
-const VFIX={S:{goat:2000,gem:1000,titan:450,crown:200,laurel:90,trophy:30,star:10,shield:5,glove:3},D:{goat:2000,gem:1000,titan:500,crown:250,laurel:140,trophy:90,star:50,shield:22,glove:10}};
+const VFIX={S:{goat:2000,gem:1000,titan:450,crown:200,laurel:90,trophy:30,star:10,shield:5,glove:3},D:{goat:2000,gem:1000,titan:500,crown:250,laurel:140,trophy:75,star:40,shield:22,glove:10}};
 function viewCounts(a,v){ if(v==="all") return a.c; const o={}; VKEYS[v].forEach(k=>o[k]=a.c[k]); RUNK.forEach(k=>o[k]=(a.rn?a.rn[v][k]:0)); return o; }
 function achieveIndex(){
   if(AIX) return AIX;
