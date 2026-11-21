@@ -383,7 +383,8 @@ h2{font-size:22px} h3{font-size:16.5px}
 .pidx button{border:1px solid var(--rule);background:var(--soft);color:inherit;border-radius:999px;padding:2px 10px;cursor:pointer;font-size:13px}
 .pidx button:hover{border-color:var(--accent);color:var(--accent)}
 #elo-main[hidden],#elo-honp[hidden],#td-list[hidden],#td-draw[hidden]{display:none!important}
-.brk{display:flex;gap:16px;overflow-x:auto;padding:6px 2px 12px;align-items:stretch}
+.brk{display:flex;gap:16px;overflow:auto;padding:0 2px 12px;align-items:stretch;max-height:calc(100vh - 250px);overscroll-behavior:contain}   /* the draw scrolls inside its own box, so the left/right bar is always on screen */
+.brk .bcol h4{position:sticky;top:0;z-index:2;background:var(--card);padding:6px 0 4px}
 .brk .bcol{display:flex;flex-direction:column;min-width:150px;flex:1 1 170px}
 .brk .bcol h4{margin:0 0 6px;font:600 13px Poppins,Barlow,sans-serif;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
 .brk .bslots{display:flex;flex-direction:column;flex:1;gap:8px}
@@ -1268,7 +1269,7 @@ function openTourn(disc,t,p){
   const brk=bracketHTML(ms,p), dv=!!brk;                 // opens on the draw whenever there is one
   $("#tdlg-body").innerHTML=(brk?`<div class="row subtabs" style="margin-bottom:10px"><button class="btn" data-tdv="list" aria-pressed="${!dv}">Results</button><button class="btn" data-tdv="draw" aria-pressed="${!!dv}">Draw</button></div><div id="td-draw"${dv?"":" hidden"}>${brk}</div>`:"")+`<div id="td-list"${dv?" hidden":""}>`+(ms.length?grp("M")+grp("P")+grp("B"):`<p class="empty">No results recorded for this tournament.</p>`)+`</div>`+
     `<p class="caveat" style="margin-top:14px">Results as recorded${(X.tinfo[t]||[])[1]<"2018/19"?" in the RFA's season report (some early rounds and plates may be missing)":""}.${p?` Matches involving ${esc(p)} are highlighted.`:""}</p>`;
-  const d=$("#tdlg"); if(d.showModal) d.showModal(); else d.setAttribute("open","");
+  const d=$("#tdlg"); if(d.showModal) d.showModal(); else d.setAttribute("open",""); fitBrk();
 }
 
 /* ---------------- results timeline (open tournaments, main draw) ---------------- */
@@ -2260,7 +2261,7 @@ function openWinch(se,p){
   $("#tdlg-body").innerHTML=head+(brk?`<div class="row subtabs" style="margin-bottom:10px"><button class="btn" data-tdv="list" aria-pressed="${!dv}">Results</button><button class="btn" data-tdv="draw" aria-pressed="${!!dv}">Draw</button></div><div id="td-draw"${dv?"":" hidden"}>${brk}${winchGroupsHTML(se,p)}</div>`:"")+`<div id="td-list"${dv?" hidden":""}>`+
     (ms.length?["M","P","P2","P3"].map(grp).join(""):`<p class="empty">No match results recorded for this season.</p>`)+winchGroupsHTML(se,p)+`</div>`+
     `<p class="caveat" style="margin-top:14px">Winchester Fives national doubles – not counted in the rankings, open titles or head-to-heads. Results from ${src.join(" and ")||"the RFA's records"}${se<"2019/20"?"; older reports often miss early rounds and plates, and the draw is shown only where the knockout rounds are complete":""}.${p?` Matches involving ${esc(p)} are highlighted.`:""}</p>`;
-  const d=$("#tdlg"); if(d.showModal) d.showModal(); else d.setAttribute("open","");
+  const d=$("#tdlg"); if(d.showModal) d.showModal(); else d.setAttribute("open",""); fitBrk();
 }
 function playerWinchHTML(p){
   const W=TT().winch||[], M=TT().winchMatches||[];
@@ -3231,6 +3232,13 @@ $("#wi-se").addEventListener("change",e=>{S.wse=e.target.value; renderWinch();})
 $("#h2h-u").addEventListener("click",()=>{S.inclU=!S.inclU; renderH2H(); writeHash();});
 document.addEventListener("toggle",e=>{ if(e.target&&e.target.id==="we-box") S.weOpen=e.target.open; },true);
 document.addEventListener("change",e=>{ const t=e.target; if(t&&t.classList&&t.classList.contains("we-p")){ S.wePart[t.dataset.side]=t.value.trim(); weDoubles(S.a,S.b); } });
+// the draw scrolls inside its own box sized to the dialog, so its left/right bar stays on screen at the top of the draw
+function fitBrk(){ requestAnimationFrame(()=>{ const d=$("#tdlg"), b=d&&d.querySelector(".brk"); if(!b||!b.offsetParent) return;
+  b.style.maxHeight="none"; const sc=b.closest("#tdlg-body")||d; sc.scrollTop=0;
+  const pad=parseFloat(getComputedStyle(sc).paddingBottom)||0, bottom=Math.min(sc.getBoundingClientRect().bottom,innerHeight)-pad-6;
+  b.style.maxHeight=Math.max(220,bottom-b.getBoundingClientRect().top)+"px"; }); }
+addEventListener("resize",fitBrk);
+document.addEventListener("click",e=>{ if(e.target.closest&&e.target.closest("#tdlg [data-tdv]")) setTimeout(fitBrk,0); });
 $("#tdlg-close").addEventListener("click",()=>{const d=$("#tdlg"); d.close?d.close():d.removeAttribute("open");});
 $("#tdlg").addEventListener("click",e=>{if(e.target.id==="tdlg"){const d=$("#tdlg"); d.close?d.close():d.removeAttribute("open");}});
 $("#elo-bypeak").addEventListener("click",e=>{S.eloPeak=!S.eloPeak; e.target.setAttribute("aria-pressed",S.eloPeak); renderElo();});
