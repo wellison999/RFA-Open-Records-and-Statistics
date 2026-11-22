@@ -2227,6 +2227,44 @@ const ICON={
   ball:'<circle cx="12" cy="12" r="10"/><path d="M7 10a5.5 5.5 0 0 1 4-4" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>'};
 // Badges step up through bronze, silver, gold and platinum as the achievement grows (th = the threshold for each level; null = level not used)
 const METAL=[{n:"Bronze",c:"#A8662F"},{n:"Silver",c:"#8A97A5"},{n:"Gold",c:"#C9A227"},{n:"Platinum",c:"url(#platgrad)",t:"#5A189A"}];
+
+// icons for the badges added on 22 Nov 2026: solid shapes with cut-outs, so they work in metal colours and white on the profile squares
+Object.assign(ICON,{
+  mwin:'<path fill-rule="evenodd" d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zM6.6 5.6c2.4 3.9 2.4 8.9 0 12.8l1.5.9c2.8-4.5 2.8-10.1 0-14.6zm10.8 0-1.5-.9c-2.8 4.5-2.8 10.1 0 14.6l1.5-.9c-2.4-3.9-2.4-8.9 0-12.8z"/>',
+  unstop:'<path d="M2 5h4.2l7 7-7 7H2l7-7zm8.8 0H15l7 7-7 7h-4.2l7-7z"/>',
+  nerves:RICON.scales, comeback:RICON.comeback, bagel:RICON.bagel, plates:RICON.plate,
+  ironman:'<path d="M1.2 5h16.6c.4 3 2.4 4.7 5 4.8v2.6c-2.9.2-5 1.8-5.6 4.4h-2.1l2.6 4H6.2l2.6-4H7.6C3.6 16.8 1.6 13.6 1.2 9.4z"/>',
+  career:'<path d="M4.2 1.5h15.6v2.4h-1.5c-.3 3.8-2.7 6-4.7 8.1 2 2.1 4.4 4.3 4.7 8.1h1.5v2.4H4.2v-2.4h1.5c.3-3.8 2.7-6 4.7-8.1-2-2.1-4.4-4.3-4.7-8.1H4.2z"/>',
+  decades:'<path d="M1 10.8h22v2.4H1z"/><circle cx="4.6" cy="12" r="3.8"/><circle cx="12" cy="12" r="3.8"/><circle cx="19.4" cy="12" r="3.8"/>',
+  pship:'<path fill-rule="evenodd" d="M7 5h5a4 4 0 0 1 0 8h-1.2v-2.2H12a1.8 1.8 0 0 0 0-3.6H7a1.8 1.8 0 0 0 0 3.6h.6V13H7a4 4 0 0 1 0-8zm10 14h-5a4 4 0 0 1 0-8h1.2v2.2H12a1.8 1.8 0 0 0 0 3.6h5a1.8 1.8 0 0 0 0-3.6h-.6V11h.6a4 4 0 0 1 0 8z"/>',
+  team:'<circle cx="12" cy="6" r="3"/><circle cx="5" cy="8.5" r="2.5"/><circle cx="19" cy="8.5" r="2.5"/><path d="M6.5 20c0-4.2 2.4-6.8 5.5-6.8s5.5 2.6 5.5 6.8zM.8 18.5c0-3.4 1.8-5.5 4.2-5.5 1 0 1.9.3 2.6 1-1.2 1.3-1.9 2.9-2.1 4.5zm22.4 0c0-3.4-1.8-5.5-4.2-5.5-1 0-1.9.3-2.6 1 1.2 1.3 1.9 2.9 2.1 4.5z"/>',
+  ranked:'<path d="M2 20h20v2H2zM3 15h3.6v4H3zM8.2 11h3.6v8H8.2zM13.4 7.5H17V19h-3.6z"/><path d="M18.6 3h3.4v16h-3.4z"/>'
+});
+// numbers behind the badges added on 22 Nov 2026 (match results, titles, plates, season-end rankings), worked out once
+let BX_=null;
+function BX(){ if(BX_) return BX_; const V={}, g=p=>V[p]=V[p]||{mwin:0,unstop:0,nerves:0,comeback:0,bagel:0,ironman:0,career:0,decades:0,pship:0,team:0,plates:0,ranked:0};
+  ["Singles","Doubles"].forEach(disc=>{ const M=DATA.disc[disc].matches, ent={};
+    const order=M.map((m,i)=>i).filter(i=>M[i][6]&&mOK(disc,M[i])&&!isWO(M[i])&&!HCAP(disc,M[i][0])).sort((a,b)=>M[a][0]-M[b][0]||(ROUND_ORDER[M[a][2]]??-1)-(ROUND_ORDER[M[b][2]]??-1)||a-b);
+    const cur={}; let era=null;
+    order.forEach(i=>{ const m=M[i], w=m[6]===1?m[3]:m[4], l=m[6]===1?m[4]:m[3], e=ERA(disc,m[0]);
+      if(era!==null&&e!==era) Object.keys(cur).forEach(p=>cur[p]=0); era=e;              // a streak stops at a gap in the records
+      w.forEach(p=>{ cur[p]=(cur[p]||0)+1; g(p).unstop=Math.max(V[p].unstop,cur[p]); V[p].mwin++; }); l.forEach(p=>cur[p]=0);
+      [...w,...l].forEach(p=>(ent[p]=ent[p]||new Set()).add(m[0]));
+      if(!m[5]||isRet(m)) return; const G=m[5].split(", ").map(x=>x.split("-").map(Number)).filter(x=>x.length===2&&!isNaN(x[0])).map(x=>m[6]===1?x:[x[1],x[0]]); if(!G.length) return;
+      if(G.length>=3&&G.filter(x=>x[0]<x[1]).length===(G.length-1)/2) w.forEach(p=>V[p].nerves++);     // went the distance
+      if(G.length>=2&&G[0][0]<G[0][1]) w.forEach(p=>V[p].comeback++);                                   // lost the first game
+      const b0=G.filter(x=>x[1]===0&&x[0]>0).length; if(b0) w.forEach(p=>V[p].bagel+=b0); });
+    Object.entries(ent).forEach(([p,t])=>g(p).ironman+=t.size); });
+  const yrs={}, pc={}, ps={};
+  TT().list.forEach(r=>{ const y=+r[2].slice(0,4); r[3].forEach(n=>{ (yrs[n]=yrs[n]||[]).push(y); if(r[3].length>1) r[3].filter(x=>x!==n).forEach(x=>{ pc[n+"|"+x]=(pc[n+"|"+x]||0)+1; (ps[n]=ps[n]||new Set()).add(x); }); }); });
+  Object.entries(yrs).forEach(([n,ys])=>{ g(n).career=Math.max(...ys)-Math.min(...ys); V[n].decades=new Set(ys.map(y=>Math.floor((y+1)/10))).size; });
+  Object.entries(pc).forEach(([k,c])=>{ const n=k.split("|")[0]; g(n).pship=Math.max(V[n].pship,c); });
+  Object.entries(ps).forEach(([n,t])=>g(n).team=t.size);
+  TT().plates.filter(r=>!hcapPlate(r)&&!/^(U25|University)/.test(r[0])).forEach(r=>r[4].forEach(n=>g(n).plates++));
+  const Y={}; ["Singles","Doubles"].forEach(d=>seasonEnds(d).forEach(({season,snap})=>snap.rows.forEach(([rk,n])=>(Y[n]=Y[n]||new Set()).add(season))));
+  Object.entries(Y).forEach(([n,t])=>g(n).ranked=t.size);
+  return BX_=V; }
+const bx=(a,k)=>(BX()[a.n]||{})[k]||0;
 const BADGES=[
   {id:"natS",name:"National Singles champion",unit:"titles",th:[1,3,5,10],val:a=>a.c.nsW},
   {id:"natD",name:"National Doubles champion",unit:"titles",th:[1,3,5,10],val:a=>a.c.ndW},
@@ -2243,7 +2281,20 @@ const BADGES=[
   {id:"perfect",name:"Perfect season – won every open singles (or doubles) title in one season",unit:"seasons",th:[1,3,5,10],val:a=>a.c.psS+a.c.psD},
   {id:"weekend",name:"Weekend double – won the singles and doubles at the same regional open",unit:"times",th:[5,10,15,20],val:a=>a.wkDbl||0},
   {id:"partners",name:"Partner-proof – won the National Doubles with more than one partner",unit:"partners",th:[2,3,4,5],val:a=>a.natPartners||0},
-  {id:"bridge",name:"Two codes – open title winner who also won the Barnes Bridge (Winchester Fives national doubles)",unit:"Barnes Bridge titles",th:[1,3,5,10],val:a=>a.titles>0?(a.winch||0):0}];
+  {id:"bridge",name:"Two codes – open title winner who also won the Barnes Bridge (Winchester Fives national doubles)",unit:"Barnes Bridge titles",th:[1,3,5,10],val:a=>a.titles>0?(a.winch||0):0},
+  // added 22 Nov 2026. Match-based ones count recorded matches only (from 1988/89, with gaps until 2005), so they favour recent players
+  {id:"mwin",name:"Match winner – matches won (main draws, recorded results)",unit:"wins",th:[100,200,300,450],val:a=>bx(a,"mwin")},
+  {id:"unstop",name:"Unstoppable – matches won in a row",unit:"in a row",th:[10,20,30,50],val:a=>bx(a,"unstop")},
+  {id:"nerves",name:"Nerves of steel – deciding games won",unit:"deciders",th:[10,25,40,60],val:a=>bx(a,"nerves")},
+  {id:"comeback",name:"Comeback – matches won after losing the first game",unit:"comebacks",th:[5,10,20,35],val:a=>bx(a,"comeback")},
+  {id:"bagel",name:"Bagel baker – games won to nil",unit:"bagels",th:[10,25,50,100],val:a=>bx(a,"bagel")},
+  {id:"ironman",name:"Iron man – open tournaments entered (singles and doubles count separately)",unit:"tournaments",th:[25,50,100,150],val:a=>bx(a,"ironman")},
+  {id:"ranked",name:"Ranked years – seasons in the season-end rankings (singles or doubles), from 1981/82",unit:"seasons",th:[10,15,20,30],val:a=>bx(a,"ranked")},
+  {id:"career",name:"Long career – years from first to latest open title",unit:"years",th:[10,15,20,30],val:a=>bx(a,"career")},
+  {id:"decades",name:"Across the decades – open titles won in different decades",unit:"decades",th:[2,3,4,5],val:a=>bx(a,"decades")},
+  {id:"pship",name:"Partnership – titles won with the same partner",unit:"titles",th:[5,10,20,30],val:a=>bx(a,"pship")},
+  {id:"team",name:"Team player – different title-winning partners",unit:"partners",th:[3,5,8,12],val:a=>bx(a,"team")},
+  {id:"plates",name:"Plate specialist – plate wins (not U25 or University)",unit:"plate wins",th:[3,5,8,12],val:a=>bx(a,"plates")}];
 function badgeLevels(a){ return BADGES.map(b=>{const v=b.val(a); let lv=-1; b.th.forEach((t,i)=>{ if(t!=null&&v>=t) lv=i; }); if(lv<0) return null;
   return {id:b.id,col:METAL[lv].c,lv,v,def:b,name:`${b.name}: ${METAL[lv].n} (${v} ${v===1?b.unit.replace(/finishes$/,"finish").replace(/s$/,""):b.unit})`};}).filter(Boolean); }
 // medal counts: one small medal per level with the number of badges held at that level (Achievements board, profile line)
@@ -2253,13 +2304,16 @@ const metalCounts=bs=>[3,2,1,0].map(lv=>{ const g=bs.filter(b=>b.lv===lv); retur
 const BREC={one:t=>t==="Season-end No. 1s", clock:t=>t==="Most season-end top-10 finishes", map:t=>t==="Most different tournaments won",
   broom:t=>/^Career clean sweeps/.test(t), perfect:t=>/^Perfect seasons/.test(t), flame:t=>t==="Longest runs of National titles", finals:t=>t==="Longest runs of National finals",
   finalist:t=>/^Most National (Singles|Doubles) finals$/.test(t), natS:t=>t==="Most titles – National Singles", natD:t=>t==="Most titles – National Doubles",
-  double:t=>/^The double – National Championships/.test(t), bridge:t=>t==="Two-code champions", streak:t=>t==="Longest unbeaten runs at one tournament"};
+  double:t=>/^The double – National Championships/.test(t), bridge:(t,x)=>t==="Two-code champions"&&x.lab==="Barnes Bridge", streak:t=>t==="Longest unbeaten runs at one tournament",
+  mwin:t=>t==="Most matches won", unstop:t=>t==="Longest winning streaks", nerves:t=>t==="Deciders won", comeback:t=>t==="Comeback kings", bagel:t=>t==="Bagels served",
+  ranked:t=>t==="Longest ranked careers", career:t=>t==="Longest title-winning careers", pship:(t,x)=>t==="Most successful partnerships"&&x.lab==="Title records",
+  team:(t,x)=>t==="Most title-winning partners"&&x.lab==="Title records", plates:t=>t==="Most plate wins"};
 const ORDN=["1st","2nd","3rd"];
 // records of player p in the discipline in view (plus boards covering both), regional finals left out
 function playerRecList(p){ const regFin=x=>/most finals|consecutive finals|finals in one season/i.test(x.title)&&!/national/i.test(x.title);
   return (recordIndex()[p]||[]).filter(x=>!regFin(x)); }
 function badgeRecords(p,A){ if(!REC_IX||!A) return {}; const L=playerRecList(p).filter(x=>!x.disc||x.disc===S.disc), o={};
-  A.badges.forEach(b=>{ const f=BREC[b.id]; if(!f) return; const m=L.filter(x=>f(x.title)).sort((a,b)=>a.rk-b.rk)[0]; if(m) o[b.id]=m; }); return o; }
+  A.badges.forEach(b=>{ const f=BREC[b.id]; if(!f) return; const m=L.filter(x=>f(x.title,x)).sort((a,b)=>a.rk-b.rk)[0]; if(m) o[b.id]=m; }); return o; }
 const BWHITE={one:"one",weekend:"calendar",perfect:"check",map:"pin"};   // badges whose usual icon has white detail: use the cut-out version on the coloured square
 function playerBadgesHTML(A,p){
   if(!A||!A.badges.length) return "";
