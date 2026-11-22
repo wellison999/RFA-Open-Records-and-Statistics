@@ -279,7 +279,9 @@ th.ch-s{color:var(--singles)}th.ch-d{color:var(--doubles)}
 .rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:8px;margin-top:8px}
 .rtile{display:flex;align-items:center;gap:11px;width:100%;padding:9px 12px;border:1px solid color-mix(in srgb,var(--medal) 45%,var(--rule));border-left:5px solid var(--medal);border-radius:9px;background:color-mix(in srgb,var(--medal) 9%,var(--panel));color:inherit;font:inherit;text-align:left;cursor:pointer;transition:background .15s,transform .15s}
 .rtile:hover{background:color-mix(in srgb,var(--medal) 17%,var(--panel));transform:translateY(-1px)}
-.rmed{flex:0 0 32px;height:32px;border-radius:50%;background:radial-gradient(circle at 35% 30%,color-mix(in srgb,var(--medal) 55%,#fff),var(--medal) 70%);color:#fff;display:flex;align-items:center;justify-content:center;font:700 13.5px Poppins,Barlow,sans-serif;text-shadow:0 1px 1px rgba(0,0,0,.3);box-shadow:inset 0 -2px 0 rgba(0,0,0,.18),0 1px 2px rgba(0,0,0,.15)}
+.rmed{position:relative;flex:0 0 38px;height:38px;border-radius:50%;background:radial-gradient(circle at 35% 30%,color-mix(in srgb,var(--medal) 55%,#fff),var(--medal) 70%);color:#fff;display:flex;align-items:center;justify-content:center;font:700 13.5px Poppins,Barlow,sans-serif;text-shadow:0 1px 1px rgba(0,0,0,.3);box-shadow:inset 0 -2px 0 rgba(0,0,0,.18),0 1px 2px rgba(0,0,0,.15)}
+.rmed svg{filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
+.rrk{position:absolute;right:-5px;bottom:-4px;min-width:17px;height:17px;padding:0 3px;border-radius:9px;background:var(--panel);color:color-mix(in srgb,var(--medal) 70%,#000);border:1.5px solid var(--medal);font:700 10.5px/14px Poppins,Barlow,sans-serif;text-align:center;text-shadow:none;box-sizing:border-box}
 .rbody{flex:1;min-width:0}.rbody b{display:block;font-size:13.5px;line-height:1.25}.rbody small{display:block;color:var(--muted);font-size:12px;line-height:1.35;margin-top:2px}
 .rval{flex:0 0 auto;text-align:right;font:700 18px Poppins,Barlow,sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap;line-height:1.1}.rval small{display:block;font:600 10.5px Barlow,sans-serif;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:2px}
 .rsum{display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 4px}.rsum span{display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 6px;border-radius:999px;font-weight:600;font-size:13px;background:color-mix(in srgb,var(--medal) 14%,transparent);border:1px solid color-mix(in srgb,var(--medal) 45%,transparent)}
@@ -2055,13 +2057,45 @@ function recordIndex(){
   Object.values(out).forEach(L=>L.sort((a,b)=>a.rk-b.rk||(SO[a.lab]??99)-(SO[b.lab]??99)||(a.disc||"").localeCompare(b.disc||"")));
   return REC_IX=out;
 }
+
+// record-type icons for the profile's Records held tiles: solid shapes (cut-outs via evenodd), drawn white on the medal
+const RICON={
+  flame:'<path d="M12.6 1.3c.7 3.7 6.6 6.2 6.6 12.6a7.2 7.2 0 0 1-14.4 0c0-3.3 1.8-5.6 3.5-6.8-.1 2.4.9 3.7 2.3 4-1-4.4.8-7.8 2-9.8z"/>',
+  // trophy, flame, bolt, broom, bridge and glove come from ICON (defined further down; looked up when drawn)
+  medal:'<path d="M4.5 1.5h5l2.5 5.4-1.6 3.1zM19.5 1.5h-5l-4.1 8.6 2.4.6z"/><path fill-rule="evenodd" d="M12 9a6.8 6.8 0 1 1 0 13.6A6.8 6.8 0 0 1 12 9zm0 2.6a4.2 4.2 0 1 0 0 8.4 4.2 4.2 0 0 0 0-8.4z"/><circle cx="12" cy="15.8" r="2.4"/>',
+  stairs:'<path d="M2 21v-4h5v-4h5V9h5V5h5v16z"/>',
+  one:'<path fill-rule="evenodd" d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm8.6 3.5h-2.1L8.2 8.9v2.4l3-2V17.5h2.4z"/>',
+  climb:'<path d="M2.5 18.5 9 12l4 4 6-6V13h2.5V6h-7v2.5H17.5L13 13l-4-4-8 8z"/><path d="M2 20h20v2H2z"/>',
+  podium:'<path d="M9 7h6v14H9zM2 12h6v9H2zM16 10h6v11h-6z"/><path d="M12 1.5l1 2 2.2.3-1.6 1.5.4 2.2-2-1-2 1 .4-2.2-1.6-1.5L11 3.5z"/>',
+  target:'<path fill-rule="evenodd" d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm0 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14zm0 3a4 4 0 1 1 0 8 4 4 0 0 1 0-8z"/>',
+  bagel:'<path fill-rule="evenodd" d="M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18zm0 5.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z"/>',
+  shield:'<path fill-rule="evenodd" d="M12 2l8.5 3.2V11c0 5.2-3.6 9.5-8.5 11-4.9-1.5-8.5-5.8-8.5-11V5.2zm-1.2 13.4 6-6-1.6-1.6-4.4 4.4-2.3-2.3-1.6 1.6z"/>',
+  sling:'<path d="M10.8 13.6V22h2.4v-8.4c3.2-.6 5.3-3.3 5.3-6.6V2h-2.4v5c0 2.3-1.8 4.2-4.1 4.2S7.9 9.3 7.9 7V2H5.5v5c0 3.3 2.1 6 5.3 6.6z"/><circle cx="12" cy="4.5" r="2.2"/>',
+  comeback:'<path d="M9.5 3.5 3 9l6.5 5.5V11H15a3.6 3.6 0 0 1 0 7.2H7.5V21H15a6.4 6.4 0 0 0 0-12.8H9.5z"/>',
+  scales:'<path d="M11 2h2v2.2l6.2 1.6H22v2h-1.5l3 6.7c0 2.1-1.9 3.7-4.2 3.7S15 16.6 15 14.5l3-6.7h-5V20h4v2H7v-2h4V7.8H6l3 6.7c0 2.1-1.9 3.7-4.2 3.7S.5 16.6.5 14.5l3-6.7H2v-2h2.8L11 4.2zM16.9 14h4.8l-2.4-5.4zM2.3 14h4.8L4.7 8.6z"/>',
+  pin:'<path fill-rule="evenodd" d="M12 2a7.2 7.2 0 0 1 7.2 7.2C19.2 14.4 12 22 12 22S4.8 14.4 4.8 9.2A7.2 7.2 0 0 1 12 2zm0 4.6a2.6 2.6 0 1 0 0 5.2 2.6 2.6 0 0 0 0-5.2z"/>',
+  pair:'<circle cx="8" cy="7" r="3.3"/><circle cx="16.5" cy="7.5" r="3"/><path d="M1.5 20.5c0-4.3 2.9-7 6.5-7 1.6 0 3 .5 4.1 1.5a5.8 5.8 0 0 1 4.4-1.9c3.3 0 6 2.6 6 7.4z"/>',
+  check:'<path fill-rule="evenodd" d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm-1.3 14.2 6.6-6.6-1.7-1.7-4.9 4.9-2.6-2.6-1.7 1.7z"/>',
+  double:'<path fill-rule="evenodd" d="M8.3 5.3a6.7 6.7 0 1 1 0 13.4 6.7 6.7 0 0 1 0-13.4zm7.4 0a6.7 6.7 0 1 1 0 13.4 6.7 6.7 0 0 1 0-13.4z"/>',
+  plate:'<path fill-rule="evenodd" d="M12 5.5c5.5 0 10 3 10 6.8S17.5 19 12 19 2 16.1 2 12.3 6.5 5.5 12 5.5zm0 2.6c-3.7 0-6.6 1.6-6.6 3.6 0 .6.3 1.2.9 1.7 1.2-1 3.3-1.6 5.7-1.6s4.5.6 5.7 1.6c.6-.5.9-1.1.9-1.7 0-2-2.9-3.6-6.6-3.6z"/>',
+  clock:'<path fill-rule="evenodd" d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm-1.2 4v7.2l5.3 3.2 1.2-2-4.1-2.4V6z"/>',
+  calendar:'<path fill-rule="evenodd" d="M7 1.5h2.2v2.2h5.6V1.5H17v2.2h3a1.5 1.5 0 0 1 1.5 1.5v15.3A1.5 1.5 0 0 1 20 22H4a1.5 1.5 0 0 1-1.5-1.5V5.2A1.5 1.5 0 0 1 4 3.7h3zM5 9v10.5h14V9z"/><path d="M7 11h4v4H7z"/>'
+};
+const RICON_RULES=[[/two-code/,"bridge"],[/plate/,"plate"],[/clean sweep/,"broom"],[/perfect season/,"check"],[/the double|same-season|singles and doubles in/,"double"],
+  [/upset|giant|scalp/,"sling"],[/comeback/,"comeback"],[/decider|nerves/,"scales"],[/bagel/,"bagel"],[/without dropping|fewest points|smash/,"shield"],
+  [/elo|peak/,"bolt"],[/no\. 1|at no|top of/,"one"],[/climb|ranking points|highest ranking/,"climb"],[/top-10|top 10|top 3|top three/,"podium"],
+  [/venue|fortress|home from home|different tournaments/,"pin"],[/semi-finals in a row|finals in a row|consecutive finals|runs of national finals/,"stairs"],
+  [/in a row|winning run|streak|unbeaten|runs of national titles/,"flame"],[/partner|pair/,"pair"],[/win %|win rate|winning percentage/,"target"],
+  [/quickest|career|ever-present|decade|marathon/,"clock"],[/in one season|in a season|this season/,"calendar"],[/final/,"medal"],[/title|wins of/,"trophy"],[/match/,"glove"]];
+const recIcon=x=>{ if(x.lab==="Barnes Bridge") return "bridge"; if(x.lab==="Elo honours") return /top 3/i.test(x.title)?"podium":/top of/i.test(x.title)?"one":"bolt";
+  const t=x.title.toLowerCase(); const r=RICON_RULES.find(([rx])=>rx.test(t)); return r?r[1]:"trophy"; };
 function playerRecordsHTML(p){
   const ALL=recordIndex()[p]||[], L=ALL.filter(x=>!x.disc||x.disc===S.disc), OD=S.disc==="Singles"?"Doubles":"Singles", O=ALL.filter(x=>x.disc===OD);
   if(!L.length&&!O.length) return "";
   const ORD=["1st","2nd","3rd"], cnt=[1,2,3].map(k=>L.filter(x=>x.rk===k).length), ocnt=[1,2,3].map(k=>O.filter(x=>x.rk===k).length);
   const other=O.length?`<p class="sub rother">${OD}-only records not shown here: ${ocnt.map((c,i)=>c?`${c} × ${ORD[i]}`:"").filter(Boolean).join(", ")}. <button class="linkbtn" data-disc="${OD}">Switch to ${OD.toLowerCase()}</button></p>`:"";
   const tile=x=>`<button class="rtile" style="--medal:${MEDAL[x.rk-1]}" data-rgo="${x.tab}|${x.disc||""}"${x.go?` data-rev="${esc(x.go)}"`:""} title="Open ${esc(x.lab)}">
-      <span class="rmed">${x.joint?"=":""}${x.rk}</span>
+      <span class="rmed"><svg viewBox="0 0 24 24" width="19" height="19" fill="#fff" style="color:#fff" aria-hidden="true">${RICON[recIcon(x)]||ICON[recIcon(x)]}</svg><span class="rrk">${x.joint?"=":""}${x.rk}</span></span>
       <span class="rbody"><b>${esc(x.title)}${x.times>1?` <span class="rtimes">×${x.times}</span>`:""}</b><small>${[x.partner?"with "+esc(x.partner):"",x.ctx&&x.ctx!==x.partner?esc(x.ctx):"",esc(x.lab)+(x.disc?` · ${x.disc.toLowerCase()}`:"")].filter(Boolean).join(" · ")}</small></span>
       ${x.val?`<span class="rval">${esc(x.val)}${x.vlab?`<small>${esc(x.vlab)}</small>`:""}</span>`:""}</button>`;
   const block=(A,more)=>{ const SHOW=Math.max(12,A.filter(x=>x.rk===1).length), head=A.slice(0,SHOW), rest=A.slice(SHOW);   // every 1st always shows; others fill up to 12, the rest fold
