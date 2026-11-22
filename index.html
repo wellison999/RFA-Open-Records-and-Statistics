@@ -1246,7 +1246,7 @@ function renderPlayer(){
   // ---- career: singles and doubles together (the same whichever discipline is in view)
   html+=`<div class="plsec" id="pl-career"><span>Career</span><small>singles and doubles together · Winchester Fives is shown separately and not counted in the totals or statistics</small></div>`;
   { const br=bestRanks(p); if(br) html+=`<p class="sub" style="margin:4px 0 0">${br}</p>`; }
-  html+=playerTitlesHTML(p);
+  html+=playerTitlesHTML(p,true);   // the achievements line is covered by the Achievement titles cards below
   html+=timelineHTML(p,null,"stats");
   html+=playerTiersHTML(p);
   html+=`<div id="pl-badges">${playerBadgesHTML(achieveIndex().by[p],p)}</div>`;
@@ -1947,7 +1947,7 @@ function careerSweeps(){   // won every open tournament (singles or doubles) tha
   }));
   return out.sort((a,b)=>b.sets-a.sets||b.evs-a.evs);
 }
-function playerTitlesHTML(p){
+function playerTitlesHTML(p,noAch){
   const X=titleIndex(), o=X.by[p], L=TT().list;
   const plates=TT().plates.filter(r=>r[4].includes(p)&&!hcapPlate(r));
   const WB=TT().winch||[], WM=TT().winchMatches||[];
@@ -2041,7 +2041,7 @@ function playerTitlesHTML(p){
   if(plates.length) h+=`<p class="sub" style="margin-top:8px"><b>Plate wins (${plates.length}):</b> ${plates.map(r=>pill(`${esc(evL(r[0]))} ${/singles|doubles/i.test(evL(r[0]))?"":r[1].toLowerCase()+" "}${r[3]!=="Plate"?esc(r[3].toLowerCase())+" ":""}${rYear(r)}`,CP)).join("")}</p>`;
   const A=achieveIndex().by[p];
   const VV=achieveIndex().views, vs=["S","D"].map(v=>VV[v].list.find(o=>o.a.n===p)).filter(Boolean);
-  if(A) h+=`<p class="sub" style="margin-top:8px">Achievements: ${tierBadge(A.tier)} <b>${esc(A.tier.name)}</b> · ${A.pts} points · #${A.rank} of ${achieveIndex().list.length}${vs.map(o=>` · ${tierBadge(o.tier)} ${esc(o.tier.name)} (#${o.rank})`).join("")} ${A.badges.length?` · <button class="mbtn mline" data-pbadges="${esc(p)}" title="See all their badges">${metalCounts(A.badges)}</button> badges`:""} <a href="#" data-tab="achieve">see all</a></p>`;
+  if(A&&!noAch) h+=`<p class="sub" style="margin-top:8px">Achievements: ${tierBadge(A.tier)} <b>${esc(A.tier.name)}</b> · ${A.pts} points · #${A.rank} of ${achieveIndex().list.length}${vs.map(o=>` · ${tierBadge(o.tier)} ${esc(o.tier.name)} (#${o.rank})`).join("")} ${A.badges.length?` · <button class="mbtn mline" data-pbadges="${esc(p)}" title="See all their badges">${metalCounts(A.badges)}</button> badges`:""} <a href="#" data-tab="achieve">see all</a></p>`;
   return h;
 }
 
