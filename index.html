@@ -278,6 +278,10 @@ th.ch-s{color:var(--singles)}th.ch-d{color:var(--doubles)}
 .sp.run{cursor:pointer;font:inherit;font-size:12.5px;background:color-mix(in srgb,var(--c) var(--k,30%),transparent);color:var(--rc,inherit);border:1px solid color-mix(in srgb,var(--c) 45%,transparent);font-weight:600}
 .mcnt{display:inline-flex;align-items:center;justify-content:center;min-width:21px;height:21px;padding:0 4px;margin-right:4px;border-radius:50%;background:var(--mc);color:#fff;font:700 11.5px Poppins,Barlow,sans-serif;text-shadow:0 1px 1px rgba(0,0,0,.35);box-shadow:inset 0 -2px 0 rgba(0,0,0,.2),0 0 0 1.5px color-mix(in srgb,#fff 35%,transparent);vertical-align:-5px;box-sizing:border-box}
 .pljump{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 4px;padding:8px 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.pljg{display:flex;flex-wrap:wrap;gap:6px;align-items:center;width:100%}.pljg>b{font:700 11.5px Barlow,sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);min-width:66px}
+.pljg>b a{all:unset;cursor:pointer}.pljg>b a:hover{color:var(--accent)}
+.pldsw{margin-left:auto;display:inline-flex;border:1px solid var(--rule);border-radius:999px;overflow:hidden;align-self:center}
+.pldsw button{border:0;background:var(--panel);color:inherit;font:600 12.5px Barlow,sans-serif;padding:4px 12px;cursor:pointer}.pldsw button[aria-pressed="true"]{background:var(--accent);color:#fff}
 .pljump a{padding:4px 11px;border-radius:999px;border:1px solid var(--rule);font:600 12.5px Barlow,sans-serif;text-decoration:none;color:inherit;background:var(--panel)}
 .pljump a:hover{border-color:var(--accent);color:var(--accent)}.pljt{scroll-margin-top:70px}   /* jump-link targets (not .plsec, which is the profile's section band) */
 .mline .mcnt{margin:0 2px}.mbtn{background:none;border:0;padding:2px 3px;border-radius:999px;cursor:pointer;font:inherit;color:inherit}.mbtn:hover{background:color-mix(in srgb,var(--accent) 12%,transparent)}
@@ -1239,14 +1243,18 @@ function renderPlayer(){
   let html=`<div class="row" style="margin-top:14px;align-items:center"><h2 style="margin:0">${esc(p)}</h2><span class="spacer"></span>${copyBtn()}</div>
    <p class="sub">${(()=>{const bs=[idx.Singles.names.includes(p)?"singles":"",idx.Doubles.names.includes(p)||TT().list.some(r=>r[1]==="Doubles"&&r[3].includes(p))?"doubles":""].filter(Boolean); return bs.length?"Plays "+bs.join(" and "):"";})()}</p>`;
   if(pv==="partners"&&hasD){ body.innerHTML=html+`<div class="row" style="margin:6px 0 4px;gap:6px"><button class="btn" data-pview="profile" aria-pressed="false">Profile</button><button class="btn" data-pview="partners" aria-pressed="true">Doubles partnerships</button></div><h3 style="margin-top:14px">Doubles partnerships</h3>`+partnersHTML(p); return; }
-  // ---- overall: singles and doubles together
-  html+=`<div class="plsec"><span>Overall</span><small>singles and doubles together · Winchester Fives is shown separately and not counted in the totals or statistics</small></div>`;
+  // ---- career: singles and doubles together (the same whichever discipline is in view)
+  html+=`<div class="plsec" id="pl-career"><span>Career</span><small>singles and doubles together · Winchester Fives is shown separately and not counted in the totals or statistics</small></div>`;
+  { const br=bestRanks(p); if(br) html+=`<p class="sub" style="margin:4px 0 0">${br}</p>`; }
   html+=playerTitlesHTML(p);
   html+=timelineHTML(p,null,"stats");
+  html+=playerTiersHTML(p);
+  html+=`<div id="pl-badges">${playerBadgesHTML(achieveIndex().by[p],p)}</div>`;
+  html+=`<div id="pl-crecs"></div>`;
   // ---- then the discipline selected at the top
-  html+=`<div class="plsec" style="margin-top:34px"><span>${S.disc}</span><small>${S.disc==="Singles"?"switch to Doubles above for the doubles view":"switch to Singles above for the singles view"}</small></div>
+  html+=`<div class="plsec" id="pl-dband" style="margin-top:34px"><span>${S.disc}</span><span class="pldsw" role="group" aria-label="Discipline">${["Singles","Doubles"].map(d=>`<button data-disc="${d}" aria-pressed="${d===S.disc}">${d}</button>`).join("")}</span></div>
    ${hasD?`<div class="row" style="margin:6px 0 4px;gap:6px"><button class="btn" data-pview="profile" aria-pressed="true">Profile</button><button class="btn" data-pview="partners" aria-pressed="false">Doubles partnerships</button></div>`:""}
-   <p class="sub">${el?`Last played ${esc(el.last)}`:""}</p>${(()=>{const br=bestRanks(p); return br?`<p class="sub" style="margin-top:-8px">${br}</p>`:"";})()}
+   <p class="sub">${el?`Last played ${esc(el.last)}`:""}</p>
    <div class="stats">
     <div class="stat"><div class="num">${b?b.rank:"–"}</div><div class="lab">${b?"Ranking, "+mv:"Not in the latest rankings"}</div></div>
     <div class="stat"><div class="num">${b?fmt(b.points):"–"}</div><div class="lab">Ranking points</div></div>
@@ -1260,7 +1268,7 @@ function renderPlayer(){
   if(b){
     const names=["Latest season","Previous season","Oldest season"];
     const bdMax=Math.max(1,...b.seasons.flatMap(s=>s.events.map(e=>e.pts)));
-    html+=`<h3 id="pl-breakdown" style="scroll-margin-top:12px">How the ranking points are made up</h3>
+    html+=`<h3 id="pl-breakdown">How the ranking points are made up</h3>
      <p class="sub">Best three results in each season count, weighted ${bd.mult.map(m=>Math.round(m*100)+"%").join(" / ")}. Ranking points are 10 × √(weighted total). Counted results are marked with a bar on the left; the coloured tag is the tournament category.</p>
      <div class="seasons">`+b.seasons.map((s,i)=>`
       <div class="season"><h3>${names[i]} <span class="wt">× ${bd.mult[i]}</span></h3>
@@ -1273,16 +1281,14 @@ function renderPlayer(){
   }
   html+=oppHTML(p);
   html+=`<h3 style="margin-top:26px">Ranking history</h3><div class="chartbox" style="height:300px"><canvas id="pl-chart"></canvas></div>`;
-  html+=playerTiersHTML(p);
-  html+=`<div id="pl-badges">${playerBadgesHTML(achieveIndex().by[p],p)}</div>`;
   html+=`<div id="pl-recs"></div>`;
   html+=`<h3 style="margin-top:26px">Results</h3><div class="tablewrap"><table><thead><tr><th>Tournament</th><th>Round</th>${S.disc==="Doubles"?"<th>Partner</th>":""}<th>Opponent</th><th>Score</th><th>Result</th></tr></thead><tbody>`+
    mids.slice().reverse().map(i=>matchRow(D().matches[i],p)).join("")+`</tbody></table></div>`;
   body.innerHTML=html;
   plJump(body);
-  { const rb=$("#pl-recs"); if(rb){ const fill=()=>{ recordIndex(); const el=$("#pl-recs"), bd=$("#pl-badges"); if(bd) bd.innerHTML=playerBadgesHTML(achieveIndex().by[p],p); if(el) el.innerHTML=playerRecordsHTML(p); };
+  { const rb=$("#pl-recs"); if(rb){ const fill=()=>{ recordIndex(); const el=$("#pl-recs"), cr=$("#pl-crecs"), bd=$("#pl-badges"); if(bd) bd.innerHTML=playerBadgesHTML(achieveIndex().by[p],p); if(cr) cr.innerHTML=playerRecordsHTML(p,"career"); if(el) el.innerHTML=playerRecordsHTML(p,"disc"); };
       if(REC_IX) fill();
-      else { rb.innerHTML=`<p class="muted" style="margin-top:20px;font-size:13px">Gathering records…</p>`; setTimeout(()=>{ if(S.player!==p||S.tab!=="player") return; fill(); },60); } } }
+      else { const cr=$("#pl-crecs"); if(cr) cr.innerHTML=`<p class="muted" style="margin-top:20px;font-size:13px">Gathering records…</p>`; setTimeout(()=>{ if(S.player!==p||S.tab!=="player") return; fill(); },60); } } }
   const snaps=D().snapshots, xs=snaps.map(s=>snapX(S.disc,s));
   lineChart("pl",$("#pl-chart"),null,[{label:"Ranking",borderColor:css("--accent"),backgroundColor:css("--accent"),spanGaps:false,pointRadius:2.5,tension:.15,
     data:snaps.map((s,j)=>{const r=s.rows.find(x=>x[1]===p);return {x:xs[j],y:r?r[0]:null,lab:s.label};})}],
@@ -2128,25 +2134,23 @@ const RICON_RULES=[[/two-code/,"bridge"],[/plate/,"plate"],[/clean sweep/,"broom
   [/quickest|career|ever-present|decade|marathon/,"clock"],[/in one season|in a season|this season/,"calendar"],[/final/,"medal"],[/title|wins of/,"trophy"],[/match/,"glove"]];
 const recIcon=x=>{ if(x.lab==="Barnes Bridge") return "bridge"; if(x.lab==="Elo honours") return /top 3/i.test(x.title)?"podium":/top of/i.test(x.title)?"one":"bolt";
   const t=x.title.toLowerCase(); const r=RICON_RULES.find(([rx])=>rx.test(t)); return r?r[1]:"trophy"; };
-function playerRecordsHTML(p){
+function playerRecordsHTML(p,mode){
   const BRx=new Set(Object.values(badgeRecords(p,achieveIndex().by[p])));   // shown on a badge instead
-  const ALL=playerRecList(p).filter(x=>!BRx.has(x)), L=ALL.filter(x=>!x.disc||x.disc===S.disc), OD=S.disc==="Singles"?"Doubles":"Singles", O=ALL.filter(x=>x.disc===OD);
-  if(!L.length&&!O.length) return "";
-  const ORD=["1st","2nd","3rd"], cnt=[1,2,3].map(k=>L.filter(x=>x.rk===k).length), ocnt=[1,2,3].map(k=>O.filter(x=>x.rk===k).length);
-  const other=O.length?`<p class="sub rother">${OD}-only records not shown here: ${ocnt.map((c,i)=>c?`${c} × ${ORD[i]}`:"").filter(Boolean).join(", ")}. <button class="linkbtn" data-disc="${OD}">Switch to ${OD.toLowerCase()}</button></p>`:"";
+  const C=mode==="career", ALL=playerRecList(p).filter(x=>!BRx.has(x)), L=ALL.filter(x=>C?!x.disc:x.disc===S.disc);
+  if(!L.length) return "";
+  const ORD=["1st","2nd","3rd"], cnt=[1,2,3].map(k=>L.filter(x=>x.rk===k).length);
   const tile=x=>`<button class="btile rtl" style="--mc:${MEDAL[x.rk-1]};--mt:${MEDAL[x.rk-1]};--medal:${MEDAL[x.rk-1]}" data-rgo="${x.tab}|${x.disc||""}"${x.go?` data-rev="${esc(x.go)}"`:""} title="Open ${esc(x.lab)}">
       <span class="bico"><svg viewBox="0 0 24 24" width="24" height="24" fill="#fff" style="color:#fff" aria-hidden="true">${RICON[recIcon(x)]||ICON[recIcon(x)]}</svg><span class="rrk">${x.joint?"=":""}${x.rk}</span></span>
-      <span class="bbody"><b>${esc(x.title)}${x.times>1?` <span class="rtimes">×${x.times}</span>`:""}</b><span class="blev">${x.joint?"Joint ":""}${ORDN[x.rk-1]}</span><small>${[x.partner?"with "+esc(x.partner):"",x.ctx&&x.ctx!==x.partner?esc(x.ctx):"",esc(x.lab)+(x.disc?` · ${x.disc.toLowerCase()}`:"")].filter(Boolean).join(" · ")}</small></span>
+      <span class="bbody"><b>${esc(x.title)}${x.times>1?` <span class="rtimes">×${x.times}</span>`:""}</b><span class="blev">${x.joint?"Joint ":""}${ORDN[x.rk-1]}</span><small>${[x.partner?"with "+esc(x.partner):"",x.ctx&&x.ctx!==x.partner?esc(x.ctx):"",esc(x.lab)].filter(Boolean).join(" · ")}</small></span>
       ${x.val?`<span class="rval">${esc(x.val)}${x.vlab?`<small>${esc(x.vlab)}</small>`:""}</span>`:""}</button>`;
   const block=(A,more)=>{ const SHOW=Math.max(12,A.filter(x=>x.rk===1).length), head=A.slice(0,SHOW), rest=A.slice(SHOW);   // every 1st always shows; others fill up to 12, the rest fold
     return `<div class="bgrid">${head.map(tile).join("")}</div>${rest.length?`<details class="rmore"><summary>${more} (${A.length})</summary><div class="bgrid">${rest.map(tile).join("")}</div></details>`:""}`; };
   const G=L.filter(x=>x.tab!=="tourns"), T=L.filter(x=>x.tab==="tourns");
-  if(!L.length) return `<h3 style="margin-top:20px">Other records held – ${S.disc.toLowerCase()}/combined</h3>${other}`;
-  return `<h3 style="margin-top:20px">Other records held – ${S.disc.toLowerCase()}/combined</h3>
-    <p class="sub" style="margin-bottom:6px">Top-three places on the site's ${S.disc.toLowerCase()} record boards and the boards that cover both (= tied; ×2 = holds two of the top places). Click one to open its board.</p>
+  return `<h3 style="margin-top:20px">${C?"Career records":`${S.disc} records`}</h3>
+    <p class="sub" style="margin-bottom:6px">${C?"Top-three places on record boards that count singles and doubles together":`Top-three places on the ${S.disc.toLowerCase()} record boards`}, other than those shown on a badge (= tied; ×2 = holds two of the top places). Click one to open its board.</p>
     <div class="rsum">${cnt.map((c,i)=>c?`<span style="--medal:${MEDAL[i]}"><i></i>${c} × ${ORD[i]}</span>`:"").join("")}</div>
     ${G.length?block(G,"Show all"):""}
-    ${T.length?`<h4 class="rsubh">At individual tournaments</h4>${block(T,"Show all tournament records")}`:""}${other}`;
+    ${T.length?`<h4 class="rsubh">At individual tournaments</h4>${block(T,"Show all tournament records")}`:""}`;
 }
 
 /* ---------------- plates ---------------- */
@@ -2360,13 +2364,17 @@ function playerTiersHTML(p){ const I=achieveIndex(), A=I.by[p]; if(!A) return ""
       <span class="rval">${pts.toLocaleString()}<small>points</small></span></button>`; };
   return `<h3 style="margin-top:20px">Achievement titles</h3><div class="bgrid">${rows.map(tile).join("")}</div>`; }
 // jump links at the top of a profile, one per section (the records section fills in later, so it links to its box)
-const PLJ=[[/^Titles/,"Titles"],[/^Form guide/,"Form"],[/^Results timeline/,"Timeline"],[/^Season statistics/,"Season stats"],[/^Most-played opponents/,"Opponents"],
-  [/^Ranking history/,"Ranking history"],[/^Achievement titles/,"Achievements"],[/^Badges/,"Badges"],[/^Results$/,"Results"]];
+const PLJ=[[/^Titles/,"Titles"],[/^Form guide/,"Form"],[/^Results timeline/,"Timeline"],[/^Season statistics/,"Stats"],[/^Most-played opponents/,"Opponents"],
+  [/^Ranking history/,"Rankings"],[/^How the ranking points/,"Points"],[/^Achievement titles/,"Achievements"],[/^Results$/,"Results"]];
 function plJump(body){ const old=body.querySelector(".pljump"); if(old) old.remove();
-  const T=[...body.querySelectorAll("h3, #pl-badges, #pl-recs")].filter(e=>!(e.tagName==="H3"&&e.closest("#pl-badges,#pl-recs"))), links=[];
-  T.forEach((e,i)=>{ let lab; if(e.id==="pl-recs") lab="Records"; else if(e.id==="pl-badges") lab="Badges"; else { const m=PLJ.find(([rx])=>rx.test(e.textContent.trim())); if(!m) return; lab=m[1]; }
-    if(!e.id) e.id="pls-"+i; e.classList.add("pljt"); links.push(`<a href="#${e.id}" data-pljump="${e.id}">${lab}</a>`); });
-  const first=body.querySelector("h3"); if(first&&links.length>2) first.insertAdjacentHTML("beforebegin",`<nav class="pljump" aria-label="Profile sections">${links.join("")}</nav>`); }
+  const band=body.querySelector("#pl-dband"), G={c:[],d:[]};
+  const T=[...body.querySelectorAll("h3, #pl-badges, #pl-crecs, #pl-recs")].filter(e=>!(e.tagName==="H3"&&e.closest("#pl-badges,#pl-crecs,#pl-recs,.seasons")));
+  T.forEach((e,i)=>{ let lab; if(e.id==="pl-recs"||e.id==="pl-crecs") lab="Records"; else if(e.id==="pl-badges") lab="Badges"; else { const m=PLJ.find(([rx])=>rx.test(e.textContent.trim())); if(!m) return; lab=m[1]; }
+    if(!e.id) e.id="pls-"+i; e.classList.add("pljt"); const after=band&&(band.compareDocumentPosition(e)&Node.DOCUMENT_POSITION_FOLLOWING);
+    (after?G.d:G.c).push(`<a href="#${e.id}" data-pljump="${e.id}">${lab}</a>`); });
+  const grp=(lab,L,id)=>L.length?`<span class="pljg"><b>${id?`<a href="#${id}" data-pljump="${id}">${lab}</a>`:lab}</b>${L.join("")}</span>`:"";
+  if(band) band.classList.add("pljt");
+  const first=body.querySelector("#pl-career"); if(first&&G.c.length+G.d.length>2) first.insertAdjacentHTML("beforebegin",`<nav class="pljump" aria-label="Profile sections">${grp("Career",G.c)}${grp(S.disc,G.d,"pl-dband")}</nav>`); }
 // one player's badges in a pop-out (from the medal counts on the Achievements board or the profile line)
 function openPlayerBadges(n){ const A=achieveIndex().by[n]; if(!A) return;
   $("#tdlg-title").textContent=`${n} – badges`;
