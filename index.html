@@ -1270,6 +1270,7 @@ function renderPlayer(){
   }
   html+=oppHTML(p);
   html+=`<h3 style="margin-top:26px">Ranking history</h3><div class="chartbox" style="height:300px"><canvas id="pl-chart"></canvas></div>`;
+  html+=playerTiersHTML(p);
   html+=`<div id="pl-badges">${playerBadgesHTML(achieveIndex().by[p],p)}</div>`;
   html+=`<div id="pl-recs"></div>`;
   html+=`<h3 style="margin-top:26px">Results</h3><div class="tablewrap"><table><thead><tr><th>Tournament</th><th>Round</th>${S.disc==="Doubles"?"<th>Partner</th>":""}<th>Opponent</th><th>Score</th><th>Result</th></tr></thead><tbody>`+
@@ -2334,12 +2335,26 @@ function playerBadgesHTML(A,p){
         <span class="bbar"><i style="width:${pct}%"></i></span><small class="bnext">${hi?`${hi-b.v} more for ${METAL[nx].n.toLowerCase()} (${hi})`:"Top level"}</small></span>
       <span class="rval">${b.v}<small>${esc(unit(d,b.v))}</small></span></div>`; };
   const cnt=[3,2,1,0].map(lv=>[lv,bs.filter(b=>b.lv===lv).length]).filter(x=>x[1]);
-  return `<h3 style="margin-top:20px">Badges</h3>
+  return `<h3 style="margin-top:20px">Badges <span class="muted" style="font-size:.7em;font-weight:500">career, singles and doubles together</span></h3>
     <p class="sub" style="margin-bottom:6px">Badges rise through bronze, silver, gold and platinum as the achievement grows. <button class="linkbtn" data-badgekey="1">See all badges</button></p>
     <div class="rsum">${cnt.map(([lv,c])=>`<span class="msum" style="--mc:${MGRAD[lv]}"><i></i>${c} ${METAL[lv].n.toLowerCase()}</span>`).join("")}</div>
     <div class="bgrid">${bs.map(tile).join("")}</div>`;
 }
 const svg=(id,col,size=20)=>{const solid=col.startsWith("url")?"#3C096C":col; return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="${col}" style="color:${solid};vertical-align:-4px${col.startsWith("url")?";filter:drop-shadow(0 0 1.5px rgba(232,199,102,.85))":""}" aria-hidden="true">${ICON[id]}</svg>`;};
+// achievement titles as cards (overall, singles, doubles): points, place, and how far to the next title
+const TWHITE={};
+function playerTiersHTML(p){ const I=achieveIndex(), A=I.by[p]; if(!A) return "";
+  const rows=[["Overall",A.tier,A.pts,A.rank,I.list.length,I.views.all.tiers]];
+  ["S","D"].forEach(v=>{ const V=I.views[v], o=V.list.find(x=>x.a.n===p); if(o) rows.push([v==="S"?"Singles":"Doubles",o.tier,o.pts,o.rank,V.list.length,V.tiers]); });
+  const bare=n=>n.replace(/^(Singles|Doubles) /,"");
+  const tile=([lab,t,pts,rk,n,T])=>{ const i=T.indexOf(t), up=i>0?T[i-1]:null, hasUp=!!(up&&isFinite(up.min)), lo=t.min||0;
+    const pct=hasUp?Math.max(4,Math.min(100,Math.round(100*(pts-lo)/(up.min-lo)))):100;
+    return `<button class="btile" style="--mc:${t.col};--mt:${t.col}" data-tab="achieve" data-acv-go="${lab==="Overall"?"all":lab[0]}" title="Open the ${lab.toLowerCase()} achievements board">
+      <span class="bico"><svg viewBox="0 0 24 24" width="26" height="26" fill="#fff" style="color:#fff" aria-hidden="true">${(k=>ICON[k]||RICON[k])(TWHITE[t.icon]||t.icon)}</svg></span>
+      <span class="bbody"><b>${esc(bare(t.name))}</b><span class="blev">${lab}</span><small>#${rk} of ${n}${t.note?` · ${esc(t.note)}`:""}</small>
+        <span class="bbar"><i style="width:${pct}%"></i></span><small class="bnext">${hasUp?`${(up.min-pts).toLocaleString()} more for ${esc(bare(up.name))} (${up.min.toLocaleString()})`:"Top title"}</small></span>
+      <span class="rval">${pts.toLocaleString()}<small>points</small></span></button>`; };
+  return `<h3 style="margin-top:20px">Achievement titles</h3><div class="bgrid">${rows.map(tile).join("")}</div>`; }
 // the full list of badges in a pop-out: what each is for, the four levels and how many players hold each
 function openBadgeKey(){
   const L=achieveIndex().list, cnt=(id,lv)=>L.filter(a=>a.badges.some(x=>x.id===id&&x.lv===lv)).length;
@@ -2452,7 +2467,7 @@ function renderAchieve(){
   const cells=o=>{const c=o.c; if(v==="all") return `<td class="r">${c.nsW} / ${c.ndW}</td><td class="r">${c.nsF} / ${c.ndF}</td><td class="r">${c.rS} / ${c.rD}</td><td class="r">${c.wW+c.wF?`${c.wW} / ${c.wF}`:""}</td><td class="r">${c.y1S+c.y1D||""}</td>`;
     const d=v; return `<td class="r">${c["n"+d.toLowerCase()+"W"]||""}</td><td class="r">${c["n"+d.toLowerCase()+"F"]||""}</td><td class="r">${c["r"+d]||""}</td>${v==="D"?`<td class="r">${c.wW+c.wF?`${c.wW} / ${c.wF}`:""}</td>`:""}<td class="r">${c["y1"+d]||""}</td>`;};
   const nc=v==="D"?9:v==="S"?8:9;
-  $("#ac-body").innerHTML=`<div class="tablewrap" style="margin-top:12px"><table class="ach"><thead><tr><th class="r">#</th><th>Player</th><th>Title</th><th class="r">Points</th>${head}<th>Badges</th></tr></thead><tbody>`+
+  $("#ac-body").innerHTML=`<div class="tablewrap" style="margin-top:12px"><table class="ach"><thead><tr><th class="r">#</th><th>Player</th><th>Title</th><th class="r">Points</th>${head}<th title="Badges count singles and doubles together">Badges${v!=="all"?" (career)":""}</th></tr></thead><tbody>`+
     rows.slice(0,400).map(o=>{const a=o.a; return `<tr data-ach="${esc(a.n)}" style="cursor:pointer"><td class="r"><span class="rank">${o.rank}</span></td><td>${TIP(a.n)}</td>
       <td style="white-space:nowrap">${tierBadge(o.tier)} <span style="color:${o.tier.col};font-weight:600">${o.tier.name}</span></td><td class="r"><b>${o.pts}</b></td>
       ${cells(o)}<td style="white-space:nowrap">${metalCounts(a.badges)}</td></tr>
@@ -3432,7 +3447,7 @@ document.addEventListener("click",e=>{
   if(t.dataset.h2h){e.preventDefault(); S.a=t.dataset.h2hp; S.b=t.dataset.h2h; setTab("h2h"); window.scrollTo(0,0); return;}
   if(t.dataset.disc) return setDisc(t.dataset.disc);
   if(t.dataset.grp){ const g=GROUPS.find(x=>x.id===t.dataset.grp); setTab(LASTSUB[g.id]||g.tabs[0][0]); return; }
-  if(t.dataset.tab){ if(t.tagName==="A") e.preventDefault(); setTab(t.dataset.tab); if(t.tagName==="A") window.scrollTo(0,0); return; }
+  if(t.dataset.tab){ if(t.tagName==="A") e.preventDefault(); if(t.dataset.acvGo) S.acv=t.dataset.acvGo; setTab(t.dataset.tab); if(t.dataset.acvGo) window.scrollTo(0,0); if(t.tagName==="A") window.scrollTo(0,0); return; }
   if(t.dataset.open){e.preventDefault(); return openPlayer(t.dataset.open,t.dataset.sec);}
   if(t.dataset.toggle){const s=S.rkSel[S.disc+S.view]; s[t.dataset.toggle]?delete s[t.dataset.toggle]:s[t.dataset.toggle]=1; return renderRankings();}
   if(t.dataset.rm){delete S.rkSel[S.disc+S.view][t.dataset.rm]; return renderRankings();}
