@@ -276,6 +276,19 @@ th.ch-s{color:var(--singles)}th.ch-d{color:var(--doubles)}
 #tv-d .btn[aria-pressed="true"],#se-prev:not(:disabled):hover,#se-next:not(:disabled):hover{background:var(--accent);color:#fff;border-color:var(--accent)}
 .pt-stat{border-top:4px solid var(--c);border-radius:6px}.pt-stat .num{color:var(--c)}
 .sp.run{cursor:pointer;font:inherit;font-size:12.5px;background:color-mix(in srgb,var(--c) var(--k,30%),transparent);color:var(--rc,inherit);border:1px solid color-mix(in srgb,var(--c) 45%,transparent);font-weight:600}
+.mcnt{display:inline-flex;align-items:center;justify-content:center;min-width:21px;height:21px;padding:0 4px;margin-right:4px;border-radius:50%;background:var(--mc);color:#fff;font:700 11.5px Poppins,Barlow,sans-serif;text-shadow:0 1px 1px rgba(0,0,0,.35);box-shadow:inset 0 -2px 0 rgba(0,0,0,.2),0 0 0 1.5px color-mix(in srgb,#fff 35%,transparent);vertical-align:-5px;box-sizing:border-box}
+.mline .mcnt{margin:0 2px}
+.rsum .msum{background:none}.rsum .msum i{background:var(--mc)}
+.msum{display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 6px;border-radius:999px;font-weight:600;font-size:13px;border:1px solid var(--rule)}.msum i{width:14px;height:14px;border-radius:50%;background:var(--mc);display:inline-block}
+.bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:8px;margin-top:8px}
+.btile{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border:1px solid var(--rule);border-radius:10px;background:var(--panel);position:relative;overflow:hidden}
+.btile::before{content:"";position:absolute;inset:0 auto 0 0;width:5px;background:var(--mc)}
+.bico{flex:0 0 44px;height:44px;border-radius:12px;background:var(--mc);display:flex;align-items:center;justify-content:center;box-shadow:inset 0 -3px 0 rgba(0,0,0,.18),0 1px 3px rgba(0,0,0,.18)}
+.bico svg{filter:drop-shadow(0 1px 1px rgba(0,0,0,.3));vertical-align:0!important}
+.bbody{flex:1;min-width:0}.bbody b{font-size:14px}.blev{margin-left:6px;font:700 10.5px Barlow,sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--mt)}
+.bbody small{display:block;color:var(--muted);font-size:12px;line-height:1.35;margin-top:2px}
+.bbar{display:block;height:5px;border-radius:3px;background:color-mix(in srgb,var(--muted) 22%,transparent);margin-top:7px;overflow:hidden}.bbar i{display:block;height:100%;background:var(--mc);border-radius:3px}
+.bnext{font-size:11.5px!important;margin-top:3px!important}
 .rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:8px;margin-top:8px}
 .rtile{display:flex;align-items:center;gap:11px;width:100%;padding:9px 12px;border:1px solid color-mix(in srgb,var(--medal) 45%,var(--rule));border-left:5px solid var(--medal);border-radius:9px;background:color-mix(in srgb,var(--medal) 9%,var(--panel));color:inherit;font:inherit;text-align:left;cursor:pointer;transition:background .15s,transform .15s}
 .rtile:hover{background:color-mix(in srgb,var(--medal) 17%,var(--panel));transform:translateY(-1px)}
@@ -606,7 +619,7 @@ h2{font-size:22px} h3{font-size:16.5px}
       <p class="sub">Every player who has won an open title, finished a season in the top ten or reached a Barnes Bridge final, scored on a career's worth of achievements. Click a row to see how the points were earned.</p>
       <div class="row subtabs" role="group" aria-label="View" style="margin:6px 0 12px"><button class="btn" data-acv="all">Overall</button><button class="btn" data-acv="S">Singles</button><button class="btn" data-acv="D">Doubles</button></div>
       <div id="ac-legend"></div>
-      <div class="row" style="margin-top:12px"><input type="search" id="ac-q" placeholder="Find a player" aria-label="Find a player"><button class="btn" id="ac-all" aria-pressed="false" title="Show every badge on every row, not just the best six">Show all badges</button></div>
+      <div class="row" style="margin-top:12px"><input type="search" id="ac-q" placeholder="Find a player" aria-label="Find a player"><button class="btn" id="ac-all" hidden aria-pressed="false" title="Show every badge on every row, not just the best six">Show all badges</button></div>
       <div id="ac-body"></div>
     </div>
   </section>
@@ -1249,6 +1262,7 @@ function renderPlayer(){
   }
   html+=oppHTML(p);
   html+=`<h3 style="margin-top:26px">Ranking history</h3><div class="chartbox" style="height:300px"><canvas id="pl-chart"></canvas></div>`;
+  html+=playerBadgesHTML(achieveIndex().by[p]);
   html+=`<div id="pl-recs"></div>`;
   html+=`<h3 style="margin-top:26px">Results</h3><div class="tablewrap"><table><thead><tr><th>Tournament</th><th>Round</th>${S.disc==="Doubles"?"<th>Partner</th>":""}<th>Opponent</th><th>Score</th><th>Result</th></tr></thead><tbody>`+
    mids.slice().reverse().map(i=>matchRow(D().matches[i],p)).join("")+`</tbody></table></div>`;
@@ -2007,7 +2021,7 @@ function playerTitlesHTML(p){
   if(plates.length) h+=`<p class="sub" style="margin-top:8px"><b>Plate wins (${plates.length}):</b> ${plates.map(r=>pill(`${esc(evL(r[0]))} ${/singles|doubles/i.test(evL(r[0]))?"":r[1].toLowerCase()+" "}${r[3]!=="Plate"?esc(r[3].toLowerCase())+" ":""}${rYear(r)}`,CP)).join("")}</p>`;
   const A=achieveIndex().by[p];
   const VV=achieveIndex().views, vs=["S","D"].map(v=>VV[v].list.find(o=>o.a.n===p)).filter(Boolean);
-  if(A) h+=`<p class="sub" style="margin-top:8px">Achievements: ${tierBadge(A.tier)} <b>${esc(A.tier.name)}</b> · ${A.pts} points · #${A.rank} of ${achieveIndex().list.length}${vs.map(o=>` · ${tierBadge(o.tier)} ${esc(o.tier.name)} (#${o.rank})`).join("")} ${A.badges.map(badgeIcon).join("")} <a href="#" data-tab="achieve">see all</a></p>`;
+  if(A) h+=`<p class="sub" style="margin-top:8px">Achievements: ${tierBadge(A.tier)} <b>${esc(A.tier.name)}</b> · ${A.pts} points · #${A.rank} of ${achieveIndex().list.length}${vs.map(o=>` · ${tierBadge(o.tier)} ${esc(o.tier.name)} (#${o.rank})`).join("")} ${A.badges.length?` · <span class="mline">${metalCounts(A.badges)}</span> badges`:""} <a href="#" data-tab="achieve">see all</a></p>`;
   return h;
 }
 
@@ -2225,7 +2239,29 @@ const BADGES=[
   {id:"partners",name:"Partner-proof – won the National Doubles with more than one partner",unit:"partners",th:[2,3,4,5],val:a=>a.natPartners||0},
   {id:"bridge",name:"Two codes – open title winner who also won the Barnes Bridge (Winchester Fives national doubles)",unit:"Barnes Bridge titles",th:[1,3,5,10],val:a=>a.titles>0?(a.winch||0):0}];
 function badgeLevels(a){ return BADGES.map(b=>{const v=b.val(a); let lv=-1; b.th.forEach((t,i)=>{ if(t!=null&&v>=t) lv=i; }); if(lv<0) return null;
-  return {id:b.id,col:METAL[lv].c,lv,name:`${b.name}: ${METAL[lv].n} (${v} ${v===1?b.unit.replace(/finishes$/,"finish").replace(/s$/,""):b.unit})`};}).filter(Boolean); }
+  return {id:b.id,col:METAL[lv].c,lv,v,def:b,name:`${b.name}: ${METAL[lv].n} (${v} ${v===1?b.unit.replace(/finishes$/,"finish").replace(/s$/,""):b.unit})`};}).filter(Boolean); }
+// medal counts: one small medal per level with the number of badges held at that level (Achievements board, profile line)
+const MGRAD=["#A8662F","#8A97A5","#C9A227","linear-gradient(135deg,#E8C766 0%,#7B2CBF 38%,#3C096C 72%,#B08D2E 100%)"];
+const metalCounts=bs=>[3,2,1,0].map(lv=>{ const g=bs.filter(b=>b.lv===lv); return g.length?`<span class="mcnt" style="--mc:${MGRAD[lv]}" title="${g.length} ${METAL[lv].n.toLowerCase()}: ${esc(g.map(b=>b.def.name.split(" – ")[0]).join(", "))}">${g.length}</span>`:""; }).join("");
+// the profile's Badges section: every badge held, best first, with how far it is to the next level
+const BWHITE={one:"one",weekend:"calendar",perfect:"check",map:"pin"};   // badges whose usual icon has white detail: use the cut-out version on the coloured square
+function playerBadgesHTML(A){
+  if(!A||!A.badges.length) return "";
+  const bs=[...A.badges].sort((x,y)=>y.lv-x.lv||BADGES.indexOf(x.def)-BADGES.indexOf(y.def));
+  const unit=(b,v)=>v===1?b.unit.replace(/finishes$/,"finish").replace(/s$/,""):b.unit;
+  const tile=b=>{ const d=b.def, [nm,...rest]=d.name.split(" – "), desc=rest.join(" – "), th=d.th, nx=th.findIndex((t,i)=>i>b.lv&&t!=null);
+    const lo=th[b.lv], hi=nx>=0?th[nx]:null, pct=hi?Math.max(4,Math.min(100,Math.round(100*(b.v-lo)/(hi-lo)))):100;
+    return `<div class="btile" style="--mc:${MGRAD[b.lv]};--mt:${METAL[b.lv].t||METAL[b.lv].c}">
+      <span class="bico"><svg viewBox="0 0 24 24" width="24" height="24" fill="#fff" style="color:#fff" aria-hidden="true">${(k=>RICON[k]||ICON[k])(BWHITE[b.id]||b.id)}</svg></span>
+      <span class="bbody"><b>${esc(nm)}</b><span class="blev">${METAL[b.lv].n}</span>
+        <small>${b.v} ${esc(unit(d,b.v))}${desc?` · ${esc(desc)}`:""}</small>
+        <span class="bbar"><i style="width:${pct}%"></i></span><small class="bnext">${hi?`${hi-b.v} more for ${METAL[nx].n.toLowerCase()} (${hi})`:"Top level"}</small></span></div>`; };
+  const cnt=[3,2,1,0].map(lv=>[lv,bs.filter(b=>b.lv===lv).length]).filter(x=>x[1]);
+  return `<h3 style="margin-top:20px">Badges</h3>
+    <p class="sub" style="margin-bottom:6px">Badges rise through bronze, silver, gold and platinum as the achievement grows. <a href="#" data-tab="achieve">How they work</a></p>
+    <div class="rsum">${cnt.map(([lv,c])=>`<span class="msum" style="--mc:${MGRAD[lv]}"><i></i>${c} ${METAL[lv].n.toLowerCase()}</span>`).join("")}</div>
+    <div class="bgrid">${bs.map(tile).join("")}</div>`;
+}
 const svg=(id,col,size=20)=>{const solid=col.startsWith("url")?"#3C096C":col; return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="${col}" style="color:${solid};vertical-align:-4px${col.startsWith("url")?";filter:drop-shadow(0 0 1.5px rgba(232,199,102,.85))":""}" aria-hidden="true">${ICON[id]}</svg>`;};
 // platinum: royal purple with a gold sheen, defined once for every badge
 document.body.insertAdjacentHTML("afterbegin",'<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="platgrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E8C766"/><stop offset=".35" stop-color="#7B2CBF"/><stop offset=".7" stop-color="#3C096C"/><stop offset="1" stop-color="#B08D2E"/></linearGradient></defs></svg>');
@@ -2329,7 +2365,7 @@ function renderAchieve(){
   $("#ac-body").innerHTML=`<div class="tablewrap" style="margin-top:12px"><table class="ach"><thead><tr><th class="r">#</th><th>Player</th><th>Title</th><th class="r">Points</th>${head}<th>Badges</th></tr></thead><tbody>`+
     rows.slice(0,400).map(o=>{const a=o.a; return `<tr data-ach="${esc(a.n)}" style="cursor:pointer"><td class="r"><span class="rank">${o.rank}</span></td><td>${TIP(a.n)}</td>
       <td style="white-space:nowrap">${tierBadge(o.tier)} <span style="color:${o.tier.col};font-weight:600">${o.tier.name}</span></td><td class="r"><b>${o.pts}</b></td>
-      ${cells(o)}<td style="white-space:nowrap">${S.acAll?a.badges.map(badgeIcon).join(""):badgeStrip(a.badges)}</td></tr>
+      ${cells(o)}<td style="white-space:nowrap">${metalCounts(a.badges)}</td></tr>
       <tr class="ach-det" data-achd="${esc(a.n)}" hidden><td></td><td colspan="${nc}">${keys.filter(k=>o.c[k]).map(k=>`${ACH_LABEL[k]}: ${o.c[k]} × ${ACH_PTS[k]} = <b>${o.c[k]*ACH_PTS[k]}</b>`).join(" · ")}${a.badges.length?`<br>${a.badges.map(b=>esc(b.name)).join(" · ")}`:""}</td></tr>`;}).join("")+`</tbody></table></div>`;
 }
 
