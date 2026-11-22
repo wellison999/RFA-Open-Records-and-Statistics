@@ -387,7 +387,7 @@ h2{font-size:22px} h3{font-size:16.5px}
 #elo-main[hidden],#elo-honp[hidden],#td-list[hidden],#td-draw[hidden]{display:none!important}
 .brk{display:flex;gap:16px;overflow:auto;padding:0 2px 12px;align-items:stretch;max-height:calc(100vh - 250px);overscroll-behavior:contain}   /* the draw scrolls inside its own box, so the left/right bar is always on screen */
 .brk .bcol h4{position:sticky;top:0;z-index:2;background:var(--panel);padding:6px 0 4px}
-.brk .bcol{display:flex;flex-direction:column;min-width:150px;flex:1 1 170px}
+.brk .bcol{display:flex;flex-direction:column;min-width:max-content;flex:1 0 150px}   /* never narrower than the longest name: the draw scrolls sideways instead */
 .brk .bcol h4{margin:0 0 6px;font:600 13px Poppins,Barlow,sans-serif;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
 .brk .bslots{display:flex;flex-direction:column;flex:1;gap:8px}
 /* each match gets an equal share of the column, so it sits level with the middle of the two matches that feed it;
@@ -405,7 +405,7 @@ h2{font-size:22px} h3{font-size:16.5px}
 .bm span:first-child{overflow:hidden;text-overflow:ellipsis;min-width:0}
 .bm div.d2{align-items:center;line-height:1.3;padding:4px 7px}   /* doubles: one partner per line, so both names can be read */
 .bm .bp{display:block;font-weight:inherit;overflow:hidden;text-overflow:ellipsis}
-.brk.dbl .bcol{min-width:175px;flex-basis:195px}
+.brk.dbl .bcol{min-width:max-content;flex-basis:175px}
 .bm .bw{font-weight:600}.bm .bs{color:var(--muted);font-variant-numeric:tabular-nums}
 .bm .bs .bg{display:inline-block;min-width:2.4ch;text-align:right;font-style:normal}   /* one fixed-width cell per game, so bold and plain scores line up */
 .bm.bye{visibility:hidden}.bm.me{background:color-mix(in srgb,var(--accent) 10%,var(--panel))}
