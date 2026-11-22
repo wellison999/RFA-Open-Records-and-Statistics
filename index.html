@@ -284,7 +284,7 @@ th.ch-s{color:var(--singles)}th.ch-d{color:var(--doubles)}
 .rval{flex:0 0 auto;text-align:right;font:700 18px Poppins,Barlow,sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap;line-height:1.1}.rval small{display:block;font:600 10.5px Barlow,sans-serif;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:2px}
 .rsum{display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 4px}.rsum span{display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 6px;border-radius:999px;font-weight:600;font-size:13px;background:color-mix(in srgb,var(--medal) 14%,transparent);border:1px solid color-mix(in srgb,var(--medal) 45%,transparent)}
 .rsum i{width:14px;height:14px;border-radius:50%;background:var(--medal);display:inline-block}
-.rtimes{font:600 11px Barlow,sans-serif;color:var(--muted);margin-left:2px}.rmore{margin-top:8px}.rmore summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:13.5px}
+.rtimes{font:600 11px Barlow,sans-serif;color:var(--muted);margin-left:2px}.rsubh{margin:16px 0 0;font:600 13px Poppins,Barlow,sans-serif;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}.rmore{margin-top:8px}.rother{margin-top:10px;font-size:13px}.linkbtn{background:none;border:0;padding:0;color:var(--accent);font:inherit;font-weight:600;cursor:pointer;text-decoration:underline}.rmore summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:13.5px}
 .ru-cnt{display:block;width:fit-content;margin:3px 0 0 auto;font-weight:600}.ru-pills{display:block;margin-top:3px}.ru-lab{font-size:11.5px;color:var(--muted,#7b8794);margin-right:4px;font-weight:600;text-transform:uppercase;letter-spacing:.03em}.ttab td>.ru-pills:first-child{margin-top:0}
 .sp.run i{font-style:normal;font-weight:400;opacity:.8;margin-left:3px}
 .runyrs[hidden],.sp.run[hidden]{display:none}
@@ -2005,15 +2005,15 @@ function playerTitlesHTML(p){
    Read from the site's own record boards: every card is rendered once (off screen), and each top-three row (the medalled
    rows, ties sharing a medal) is filed under its player. Built the first time a profile asks, then cached. */
 let REC_IX=null;
-const REC_SRC=[["Title records","trec"],["Ranking records","records"],["Match records","matches"],["Streaks","streaks"],["Close matches","close"],
+const REC_SRC=[["Title records","trec"],["Tournaments","tourns"],["Ranking records","records"],["Match records","matches"],["Streaks","streaks"],["Close matches","close"],
   ["Upsets","upsets"],["Venues","venues"],["Elo honours","elohon"],["Partnerships","pairs"],["Plate records","plates"],["Barnes Bridge","winch"]];
 function recordIndex(){
   if(REC_IX) return REC_IX;
-  const keep={}; ["disc","tab","psub","plU","pair","recAct","wsub"].forEach(k=>keep[k]=S[k]);
+  const keep={}; ["disc","tab","psub","plU","pair","recAct","wsub","ev","evd"].forEach(k=>keep[k]=S[k]);
   const pq=$("#pr-q"), pqv=pq?pq.value:""; if(pq) pq.value="";
   const out={}, seen={}, sigs={}, byCard={};
-  const scan=(html,lab,tab,disc)=>{ const box=document.createElement("div"); box.innerHTML=html;
-    box.querySelectorAll(".tcard").forEach(c=>{ const h3=c.querySelector("h3"); if(!h3) return; const title=h3.textContent.trim();
+  const scan=(html,lab,tab,disc,ex={})=>{ const box=document.createElement("div"); box.innerHTML=html;
+    box.querySelectorAll(".tcard").forEach(c=>{ const h3=c.querySelector("h3"); if(!h3) return; const title=h3.textContent.trim()+(ex.suf||"");
       const sig=lab+"|"+title, body=(c.querySelector("tbody")||c).textContent;
       if(disc){ if(sigs[sig]===undefined) sigs[sig]=body; else if(sigs[sig]===body){ (byCard[sig]||[]).forEach(o=>o.disc=null); return; } }
       const ths=[...c.querySelectorAll("thead th")].map(t=>t.textContent.trim());
@@ -2028,8 +2028,8 @@ function recordIndex(){
         names.forEach(n=>{ const partner=names.filter(x=>x!==n).join(" & "), k=[n,lab,title,val,ctx,partner].join("|");
           const kk=[n,lab,disc||"",title].join("|");                                   // one entry per board: the best place (a player can hold several rows)
           if(seen[kk]){ const o=seen[kk]; if(rk<o.rk) Object.assign(o,{rk,joint,val,vlab,ctx,partner,times:1}); else if(rk===o.rk) o.times++; return; }
-          const o={rk,joint,title,val,vlab,ctx,partner,lab,tab,disc,times:1}; seen[kk]=o; (byCard[lab+"|"+title]=byCard[lab+"|"+title]||[]).push(o); (out[n]=out[n]||[]).push(o); }); }); }); };
-  const run=(lab,tab,disc,fn)=>{ try{ S.disc=disc||keep.disc; S.tab=tab; scan(fn(),lab,tab,disc); }catch(e){ console.warn("records index:",lab,disc,e); } };
+          const o={rk,joint,title,val,vlab,ctx,partner,lab,tab,disc,times:1,go:ex.go||""}; seen[kk]=o; (byCard[lab+"|"+title]=byCard[lab+"|"+title]||[]).push(o); (out[n]=out[n]||[]).push(o); }); }); }); };
+  const run=(lab,tab,disc,fn,ex)=>{ try{ S.disc=disc||keep.disc; S.tab=tab; scan(fn(),lab,tab,disc,ex); }catch(e){ console.warn("records index:",lab,disc,e); } };
   S.recAct=false; S.plU=false; S.psub="stats"; S.wsub="stats"; S.pair=null;
   run("Title records","trec",null,()=>titleStatsHTML());
   ["Singles","Doubles"].forEach(d=>{
@@ -2044,24 +2044,35 @@ function recordIndex(){
   run("Partnerships","pairs","Doubles",()=>{renderPairs(); return $("#pr-body").innerHTML;});
   run("Plate records","plates",null,()=>{renderPlates(); return $("#pw-body").innerHTML;});
   run("Barnes Bridge","winch",null,()=>{renderWinch(); return $("#wi-body").innerHTML;});
+  // each tournament's own boards (most titles, finals, winning runs, pairs ...), titled with the tournament
+  const TL0=TT().list;
+  EV_ORDER.forEach(e=>{ const ds=["Singles","Doubles"].filter(d=>TL0.some(r=>r[0]===e&&r[1]===d)), canC=isNat(e)||ds.length>1;
+    ds.concat(canC?["Combined"]:[]).forEach(d=>{ const C=d==="Combined";
+      run("Tournaments","tourns",C?null:d,()=>{S.ev=e; S.evd=d; renderTourns(); return $("#tv-body").innerHTML;},
+        {suf:` – ${evL(e)}${C?(isNat(e)?" (singles & doubles)":" (combined)"):""}`, go:e+"|"+d}); }); });
   Object.assign(S,keep); if(pq) pq.value=pqv;
   const SO=Object.fromEntries(REC_SRC.map(([l],i)=>[l,i]));
   Object.values(out).forEach(L=>L.sort((a,b)=>a.rk-b.rk||(SO[a.lab]??99)-(SO[b.lab]??99)||(a.disc||"").localeCompare(b.disc||"")));
   return REC_IX=out;
 }
 function playerRecordsHTML(p){
-  const L=(recordIndex()[p]||[]).filter(x=>!x.disc||x.disc===S.disc); if(!L.length) return "";
-  const ORD=["1st","2nd","3rd"], cnt=[1,2,3].map(k=>L.filter(x=>x.rk===k).length);
-  const tile=x=>`<button class="rtile" style="--medal:${MEDAL[x.rk-1]}" data-rgo="${x.tab}|${x.disc||""}" title="Open ${esc(x.lab)}">
+  const ALL=recordIndex()[p]||[], L=ALL.filter(x=>!x.disc||x.disc===S.disc), OD=S.disc==="Singles"?"Doubles":"Singles", O=ALL.filter(x=>x.disc===OD);
+  if(!L.length&&!O.length) return "";
+  const ORD=["1st","2nd","3rd"], cnt=[1,2,3].map(k=>L.filter(x=>x.rk===k).length), ocnt=[1,2,3].map(k=>O.filter(x=>x.rk===k).length);
+  const other=O.length?`<p class="sub rother">${OD}-only records not shown here: ${ocnt.map((c,i)=>c?`${c} × ${ORD[i]}`:"").filter(Boolean).join(", ")}. <button class="linkbtn" data-disc="${OD}">Switch to ${OD.toLowerCase()}</button></p>`:"";
+  const tile=x=>`<button class="rtile" style="--medal:${MEDAL[x.rk-1]}" data-rgo="${x.tab}|${x.disc||""}"${x.go?` data-rev="${esc(x.go)}"`:""} title="Open ${esc(x.lab)}">
       <span class="rmed">${x.joint?"=":""}${x.rk}</span>
       <span class="rbody"><b>${esc(x.title)}${x.times>1?` <span class="rtimes">×${x.times}</span>`:""}</b><small>${[x.partner?"with "+esc(x.partner):"",x.ctx&&x.ctx!==x.partner?esc(x.ctx):"",esc(x.lab)+(x.disc?` · ${x.disc.toLowerCase()}`:"")].filter(Boolean).join(" · ")}</small></span>
       ${x.val?`<span class="rval">${esc(x.val)}${x.vlab?`<small>${esc(x.vlab)}</small>`:""}</span>`:""}</button>`;
-  const SHOW=Math.max(9,cnt[0]), head=L.slice(0,SHOW), rest=L.slice(SHOW);
-  return `<h3 style="margin-top:20px">Records held</h3>
+  const block=(A,more)=>{ const SHOW=12, head=A.slice(0,SHOW), rest=A.slice(SHOW);
+    return `<div class="rgrid">${head.map(tile).join("")}</div>${rest.length?`<details class="rmore"><summary>${more} (${A.length})</summary><div class="rgrid">${rest.map(tile).join("")}</div></details>`:""}`; };
+  const G=L.filter(x=>x.tab!=="tourns"), T=L.filter(x=>x.tab==="tourns");
+  if(!L.length) return `<h3 style="margin-top:20px">Records held – ${S.disc.toLowerCase()}</h3>${other}`;
+  return `<h3 style="margin-top:20px">Records held – ${S.disc.toLowerCase()}</h3>
     <p class="sub" style="margin-bottom:6px">Top-three places on the site's ${S.disc.toLowerCase()} record boards and the boards that cover both (= tied; ×2 = holds two of the top places). Click one to open its board.</p>
     <div class="rsum">${cnt.map((c,i)=>c?`<span style="--medal:${MEDAL[i]}"><i></i>${c} × ${ORD[i]}</span>`:"").join("")}</div>
-    <div class="rgrid">${head.map(tile).join("")}</div>
-    ${rest.length?`<details class="rmore"><summary>Show all ${L.length}</summary><div class="rgrid">${rest.map(tile).join("")}</div></details>`:""}`;
+    ${G.length?block(G,"Show all"):""}
+    ${T.length?`<h4 class="rsubh">At individual tournaments</h4>${block(T,"Show all tournament records")}`:""}${other}`;
 }
 
 /* ---------------- plates ---------------- */
@@ -3233,7 +3244,7 @@ document.addEventListener("click",e=>{
   const wd=e.target.closest("[data-wdv]"); if(wd){e.preventDefault(); S.wdv=wd.dataset.wdv; return renderWinch();}
   const wc=e.target.closest("[data-winch]"); if(wc){e.preventDefault(); return openWinch(wc.dataset.winch,S.tab==="player"?S.player:"");}
   const t=e.target.closest("button,a"); if(!t) return;
-  if(t.dataset.rgo){ const [tab,d]=t.dataset.rgo.split("|"); if(tab==="plates"){S.psub="stats";S.plU=false;} if(tab==="winch") S.wsub="stats"; if(tab==="pairs") S.pair=null;
+  if(t.dataset.rgo){ const [tab,d]=t.dataset.rgo.split("|"); if(tab==="tourns"&&t.dataset.rev){ const [e,v]=t.dataset.rev.split("|"); S.ev=e; S.evd=v; } if(tab==="plates"){S.psub="stats";S.plU=false;} if(tab==="winch") S.wsub="stats"; if(tab==="pairs") S.pair=null;
     if(d&&d!==S.disc){ S.disc=d; document.body.dataset.disc=d; document.querySelectorAll(".seg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.disc===d)); }
     setTab(tab); window.scrollTo(0,0); return; }
   if(t.dataset.season){e.preventDefault(); S.se=t.dataset.season; setTab("seasons"); window.scrollTo(0,0); return;}
