@@ -280,8 +280,13 @@ th.ch-s{color:var(--singles)}th.ch-d{color:var(--doubles)}
 .mline .mcnt{margin:0 2px}
 .rsum .msum{background:none}.rsum .msum i{background:var(--mc)}
 .msum{display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 6px;border-radius:999px;font-weight:600;font-size:13px;border:1px solid var(--rule)}.msum i{width:14px;height:14px;border-radius:50%;background:var(--mc);display:inline-block}
-.bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:8px;margin-top:8px}
-.btile{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border:1px solid var(--rule);border-radius:10px;background:var(--panel);position:relative;overflow:hidden}
+.bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(330px,100%),1fr));gap:8px;margin-top:8px}
+.btile{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border:1px solid var(--rule);border-radius:10px;background:var(--panel);position:relative;overflow:hidden;width:100%;color:inherit;font:inherit;text-align:left}
+button.btile{cursor:pointer;transition:transform .15s,box-shadow .15s}button.btile:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.btile .rval{margin-left:auto;padding-left:6px;flex:0 0 auto;max-width:76px;white-space:normal}.btile .rval small{white-space:normal;line-height:1.2}
+.btile .bico{position:relative}.btile .bico .rrk{right:-6px;bottom:-5px}
+.brec{display:inline-flex;align-items:center;gap:5px;margin-top:5px;padding:2px 8px 2px 4px;border-radius:999px;border:1px solid color-mix(in srgb,var(--medal) 55%,transparent);background:color-mix(in srgb,var(--medal) 13%,transparent);color:inherit;font:600 11.5px Barlow,sans-serif;cursor:pointer}
+.brec i{width:12px;height:12px;border-radius:50%;background:var(--medal);display:inline-block}
 .btile::before{content:"";position:absolute;inset:0 auto 0 0;width:5px;background:var(--mc)}
 .bico{flex:0 0 44px;height:44px;border-radius:12px;background:var(--mc);display:flex;align-items:center;justify-content:center;box-shadow:inset 0 -3px 0 rgba(0,0,0,.18),0 1px 3px rgba(0,0,0,.18)}
 .bico svg{filter:drop-shadow(0 1px 1px rgba(0,0,0,.3));vertical-align:0!important}
@@ -1262,13 +1267,14 @@ function renderPlayer(){
   }
   html+=oppHTML(p);
   html+=`<h3 style="margin-top:26px">Ranking history</h3><div class="chartbox" style="height:300px"><canvas id="pl-chart"></canvas></div>`;
-  html+=playerBadgesHTML(achieveIndex().by[p]);
+  html+=`<div id="pl-badges">${playerBadgesHTML(achieveIndex().by[p],p)}</div>`;
   html+=`<div id="pl-recs"></div>`;
   html+=`<h3 style="margin-top:26px">Results</h3><div class="tablewrap"><table><thead><tr><th>Tournament</th><th>Round</th>${S.disc==="Doubles"?"<th>Partner</th>":""}<th>Opponent</th><th>Score</th><th>Result</th></tr></thead><tbody>`+
    mids.slice().reverse().map(i=>matchRow(D().matches[i],p)).join("")+`</tbody></table></div>`;
   body.innerHTML=html;
-  { const rb=$("#pl-recs"); if(rb){ if(REC_IX) rb.innerHTML=playerRecordsHTML(p);
-      else { rb.innerHTML=`<p class="muted" style="margin-top:20px;font-size:13px">Gathering records…</p>`; setTimeout(()=>{ if(S.player!==p||S.tab!=="player") return; const el=$("#pl-recs"); if(el) el.innerHTML=playerRecordsHTML(p); },60); } } }
+  { const rb=$("#pl-recs"); if(rb){ const fill=()=>{ recordIndex(); const el=$("#pl-recs"), bd=$("#pl-badges"); if(bd) bd.innerHTML=playerBadgesHTML(achieveIndex().by[p],p); if(el) el.innerHTML=playerRecordsHTML(p); };
+      if(REC_IX) fill();
+      else { rb.innerHTML=`<p class="muted" style="margin-top:20px;font-size:13px">Gathering records…</p>`; setTimeout(()=>{ if(S.player!==p||S.tab!=="player") return; fill(); },60); } } }
   const snaps=D().snapshots, xs=snaps.map(s=>snapX(S.disc,s));
   lineChart("pl",$("#pl-chart"),null,[{label:"Ranking",borderColor:css("--accent"),backgroundColor:css("--accent"),spanGaps:false,pointRadius:2.5,tension:.15,
     data:snaps.map((s,j)=>{const r=s.rows.find(x=>x[1]===p);return {x:xs[j],y:r?r[0]:null,lab:s.label};})}],
@@ -2115,17 +2121,17 @@ const RICON_RULES=[[/two-code/,"bridge"],[/plate/,"plate"],[/clean sweep/,"broom
 const recIcon=x=>{ if(x.lab==="Barnes Bridge") return "bridge"; if(x.lab==="Elo honours") return /top 3/i.test(x.title)?"podium":/top of/i.test(x.title)?"one":"bolt";
   const t=x.title.toLowerCase(); const r=RICON_RULES.find(([rx])=>rx.test(t)); return r?r[1]:"trophy"; };
 function playerRecordsHTML(p){
-  const regFin=x=>/most finals|consecutive finals|finals in one season/i.test(x.title)&&!/national/i.test(x.title);   // regional runners-up are incomplete: not shown as records
-  const ALL=(recordIndex()[p]||[]).filter(x=>!regFin(x)), L=ALL.filter(x=>!x.disc||x.disc===S.disc), OD=S.disc==="Singles"?"Doubles":"Singles", O=ALL.filter(x=>x.disc===OD);
+  const BRx=new Set(Object.values(badgeRecords(p,achieveIndex().by[p])));   // shown on a badge instead
+  const ALL=playerRecList(p).filter(x=>!BRx.has(x)), L=ALL.filter(x=>!x.disc||x.disc===S.disc), OD=S.disc==="Singles"?"Doubles":"Singles", O=ALL.filter(x=>x.disc===OD);
   if(!L.length&&!O.length) return "";
   const ORD=["1st","2nd","3rd"], cnt=[1,2,3].map(k=>L.filter(x=>x.rk===k).length), ocnt=[1,2,3].map(k=>O.filter(x=>x.rk===k).length);
   const other=O.length?`<p class="sub rother">${OD}-only records not shown here: ${ocnt.map((c,i)=>c?`${c} × ${ORD[i]}`:"").filter(Boolean).join(", ")}. <button class="linkbtn" data-disc="${OD}">Switch to ${OD.toLowerCase()}</button></p>`:"";
-  const tile=x=>`<button class="rtile" style="--medal:${MEDAL[x.rk-1]}" data-rgo="${x.tab}|${x.disc||""}"${x.go?` data-rev="${esc(x.go)}"`:""} title="Open ${esc(x.lab)}">
-      <span class="rmed"><svg viewBox="0 0 24 24" width="19" height="19" fill="#fff" style="color:#fff" aria-hidden="true">${RICON[recIcon(x)]||ICON[recIcon(x)]}</svg><span class="rrk">${x.joint?"=":""}${x.rk}</span></span>
-      <span class="rbody"><b>${esc(x.title)}${x.times>1?` <span class="rtimes">×${x.times}</span>`:""}</b><small>${[x.partner?"with "+esc(x.partner):"",x.ctx&&x.ctx!==x.partner?esc(x.ctx):"",esc(x.lab)+(x.disc?` · ${x.disc.toLowerCase()}`:"")].filter(Boolean).join(" · ")}</small></span>
+  const tile=x=>`<button class="btile rtl" style="--mc:${MEDAL[x.rk-1]};--mt:${MEDAL[x.rk-1]};--medal:${MEDAL[x.rk-1]}" data-rgo="${x.tab}|${x.disc||""}"${x.go?` data-rev="${esc(x.go)}"`:""} title="Open ${esc(x.lab)}">
+      <span class="bico"><svg viewBox="0 0 24 24" width="24" height="24" fill="#fff" style="color:#fff" aria-hidden="true">${RICON[recIcon(x)]||ICON[recIcon(x)]}</svg><span class="rrk">${x.joint?"=":""}${x.rk}</span></span>
+      <span class="bbody"><b>${esc(x.title)}${x.times>1?` <span class="rtimes">×${x.times}</span>`:""}</b><span class="blev">${x.joint?"Joint ":""}${ORDN[x.rk-1]}</span><small>${[x.partner?"with "+esc(x.partner):"",x.ctx&&x.ctx!==x.partner?esc(x.ctx):"",esc(x.lab)+(x.disc?` · ${x.disc.toLowerCase()}`:"")].filter(Boolean).join(" · ")}</small></span>
       ${x.val?`<span class="rval">${esc(x.val)}${x.vlab?`<small>${esc(x.vlab)}</small>`:""}</span>`:""}</button>`;
   const block=(A,more)=>{ const SHOW=Math.max(12,A.filter(x=>x.rk===1).length), head=A.slice(0,SHOW), rest=A.slice(SHOW);   // every 1st always shows; others fill up to 12, the rest fold
-    return `<div class="rgrid">${head.map(tile).join("")}</div>${rest.length?`<details class="rmore"><summary>${more} (${A.length})</summary><div class="rgrid">${rest.map(tile).join("")}</div></details>`:""}`; };
+    return `<div class="bgrid">${head.map(tile).join("")}</div>${rest.length?`<details class="rmore"><summary>${more} (${A.length})</summary><div class="bgrid">${rest.map(tile).join("")}</div></details>`:""}`; };
   const G=L.filter(x=>x.tab!=="tourns"), T=L.filter(x=>x.tab==="tourns");
   if(!L.length) return `<h3 style="margin-top:20px">Records held – ${S.disc.toLowerCase()}/combined</h3>${other}`;
   return `<h3 style="margin-top:20px">Records held – ${S.disc.toLowerCase()}/combined</h3>
@@ -2244,18 +2250,32 @@ function badgeLevels(a){ return BADGES.map(b=>{const v=b.val(a); let lv=-1; b.th
 const MGRAD=["#A8662F","#8A97A5","#C9A227","linear-gradient(135deg,#E8C766 0%,#7B2CBF 38%,#3C096C 72%,#B08D2E 100%)"];
 const metalCounts=bs=>[3,2,1,0].map(lv=>{ const g=bs.filter(b=>b.lv===lv); return g.length?`<span class="mcnt" style="--mc:${MGRAD[lv]}" title="${g.length} ${METAL[lv].n.toLowerCase()}: ${esc(g.map(b=>b.def.name.split(" – ")[0]).join(", "))}">${g.length}</span>`:""; }).join("");
 // the profile's Badges section: every badge held, best first, with how far it is to the next level
+const BREC={one:t=>t==="Season-end No. 1s", clock:t=>t==="Most season-end top-10 finishes", map:t=>t==="Most different tournaments won",
+  broom:t=>/^Career clean sweeps/.test(t), perfect:t=>/^Perfect seasons/.test(t), flame:t=>t==="Longest runs of National titles", finals:t=>t==="Longest runs of National finals",
+  finalist:t=>/^Most National (Singles|Doubles) finals$/.test(t), natS:t=>t==="Most titles – National Singles", natD:t=>t==="Most titles – National Doubles",
+  double:t=>/^The double – National Championships/.test(t), bridge:t=>t==="Two-code champions", streak:t=>t==="Longest unbeaten runs at one tournament"};
+const ORDN=["1st","2nd","3rd"];
+// records of player p in the discipline in view (plus boards covering both), regional finals left out
+function playerRecList(p){ const regFin=x=>/most finals|consecutive finals|finals in one season/i.test(x.title)&&!/national/i.test(x.title);
+  return (recordIndex()[p]||[]).filter(x=>!regFin(x)); }
+function badgeRecords(p,A){ if(!REC_IX||!A) return {}; const L=playerRecList(p).filter(x=>!x.disc||x.disc===S.disc), o={};
+  A.badges.forEach(b=>{ const f=BREC[b.id]; if(!f) return; const m=L.filter(x=>f(x.title)).sort((a,b)=>a.rk-b.rk)[0]; if(m) o[b.id]=m; }); return o; }
 const BWHITE={one:"one",weekend:"calendar",perfect:"check",map:"pin"};   // badges whose usual icon has white detail: use the cut-out version on the coloured square
-function playerBadgesHTML(A){
+function playerBadgesHTML(A,p){
   if(!A||!A.badges.length) return "";
+  const BR=badgeRecords(p,A);
   const bs=[...A.badges].sort((x,y)=>y.lv-x.lv||BADGES.indexOf(x.def)-BADGES.indexOf(y.def));
   const unit=(b,v)=>v===1?b.unit.replace(/finishes$/,"finish").replace(/s$/,""):b.unit;
   const tile=b=>{ const d=b.def, [nm,...rest]=d.name.split(" – "), desc=rest.join(" – "), th=d.th, nx=th.findIndex((t,i)=>i>b.lv&&t!=null);
     const lo=th[b.lv], hi=nx>=0?th[nx]:null, pct=hi?Math.max(4,Math.min(100,Math.round(100*(b.v-lo)/(hi-lo)))):100;
+    const rc=BR[b.id];
     return `<div class="btile" style="--mc:${MGRAD[b.lv]};--mt:${METAL[b.lv].t||METAL[b.lv].c}">
       <span class="bico"><svg viewBox="0 0 24 24" width="24" height="24" fill="#fff" style="color:#fff" aria-hidden="true">${(k=>RICON[k]||ICON[k])(BWHITE[b.id]||b.id)}</svg></span>
       <span class="bbody"><b>${esc(nm)}</b><span class="blev">${METAL[b.lv].n}</span>
-        <small>${b.v} ${esc(unit(d,b.v))}${desc?` · ${esc(desc)}`:""}</small>
-        <span class="bbar"><i style="width:${pct}%"></i></span><small class="bnext">${hi?`${hi-b.v} more for ${METAL[nx].n.toLowerCase()} (${hi})`:"Top level"}</small></span></div>`; };
+        ${desc?`<small>${esc(desc[0].toUpperCase()+desc.slice(1))}</small>`:""}
+        ${rc?`<button class="brec" style="--medal:${MEDAL[rc.rk-1]}" data-rgo="${rc.tab}|${rc.disc||""}"${rc.go?` data-rev="${esc(rc.go)}"`:""} title="Open the ${esc(rc.title)} board"><i></i>${rc.joint?"Joint ":""}${ORDN[rc.rk-1]} all-time${rc.disc?` in ${rc.disc.toLowerCase()}`:""}${rc.disc&&rc.val&&rc.val!==String(b.v)?` (${esc(rc.val)})`:""}</button>`:""}
+        <span class="bbar"><i style="width:${pct}%"></i></span><small class="bnext">${hi?`${hi-b.v} more for ${METAL[nx].n.toLowerCase()} (${hi})`:"Top level"}</small></span>
+      <span class="rval">${b.v}<small>${esc(unit(d,b.v))}</small></span></div>`; };
   const cnt=[3,2,1,0].map(lv=>[lv,bs.filter(b=>b.lv===lv).length]).filter(x=>x[1]);
   return `<h3 style="margin-top:20px">Badges</h3>
     <p class="sub" style="margin-bottom:6px">Badges rise through bronze, silver, gold and platinum as the achievement grows. <a href="#" data-tab="achieve">How they work</a></p>
