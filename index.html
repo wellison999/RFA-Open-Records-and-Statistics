@@ -609,6 +609,7 @@ h2{font-size:22px} h3{font-size:16.5px}
         <button class="btn" data-psub="list">Plate winners</button>
         <button class="btn" data-psub="stats">Plate records</button>
       </div>
+      <div class="row" id="pl-ufilter" style="margin-top:12px"><button class="btn" id="pl-u" aria-pressed="false">Include U25 &amp; University</button></div>
       <div class="row" id="pl-filters" style="margin-top:12px">
         <input type="search" id="pw-q" list="platenames" placeholder="Filter by player" aria-label="Filter by player">
         <select id="pw-ev" aria-label="Tournament"></select>
@@ -1993,6 +1994,7 @@ function renderPlates(){
   document.querySelectorAll("[data-psub]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.psub===S.psub));
   document.querySelectorAll("[data-pdisc]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.pdisc===S.pdisc));
   $("#pl-filters").style.display=S.psub==="stats"?"none":"";
+  $("#pl-ufilter").style.display=S.psub==="stats"?"":"none"; $("#pl-u").setAttribute("aria-pressed",!!S.plU);
   $("#pw-q").value=S.pq;
   const evOrder=[...EV_ORDER,"U25","University Singles","University Doubles"];
   evOptions($("#pw-ev"),evOrder.filter(e=>P.some(r=>r[0]===e)).concat([...new Set(P.map(r=>r[0]))].filter(e=>!evOrder.includes(e))),S.pev);
@@ -2004,17 +2006,18 @@ function renderPlates(){
       <div class="tablewrap"><table><thead><tr><th>Year</th><th>Tournament</th><th></th><th>Winner(s)</th><th>Runner(s)-up</th></tr></thead><tbody>`+
       rows.map(r=>`<tr><td>${rYear(r)}</td><td>${esc(evL(r[0]))}${r[3]!=="Plate"?` <span class="tag">${esc(r[3])}</span>`:""}</td><td>${dTag(r[1])}</td><td>${ppl(r[4])}</td><td class="muted">${r[5].length?ppl(r[5]):""}</td></tr>`).join("")+`</tbody></table></div>`;
   } else {
+    const isUe=e=>/^(U25|University)/.test(e), PR=S.plU?P:P.filter(r=>!isUe(r[0]));   // plate records: U25/University off by default (Will, 22 Nov 2026)
     const c={}, byEv={}, bySe={};
-    P.filter(r=>!hcapPlate(r)).forEach(r=>r[4].forEach(n=>{c[n]=(c[n]||0)+1; const k=n+"|"+r[0]; byEv[k]=(byEv[k]||0)+1; const s=n+"|"+r[2]; bySe[s]=(bySe[s]||0)+1;}));
+    PR.filter(r=>!hcapPlate(r)).forEach(r=>r[4].forEach(n=>{c[n]=(c[n]||0)+1; const k=n+"|"+r[0]; byEv[k]=(byEv[k]||0)+1; const s=n+"|"+r[2]; bySe[s]=(bySe[s]||0)+1;}));
     const most=Object.entries(c).sort((a,b)=>b[1]-a[1]).topBy(15,(a,b)=>b[1]-a[1]);
     const one=Object.entries(byEv).sort((a,b)=>b[1]-a[1]).topBy(10,(a,b)=>b[1]-a[1]);
     const season=Object.entries(bySe).filter(x=>x[1]>1).sort((a,b)=>b[1]-a[1]).topBy(10,(a,b)=>b[1]-a[1]);
     // plate winners who went on to win the main title at the same tournament
     const L=TT().list, up=[];
-    P.forEach(r=>r[4].forEach(n=>{ const later=L.filter(t=>t[0]===r[0]&&t[1]===r[1]&&t[3].includes(n)&&t[2]>r[2]); if(later.length) up.push({n,ev:r[0],disc:r[1],plate:r[2],title:later[0][2]}); }));
+    PR.forEach(r=>r[4].forEach(n=>{ const later=L.filter(t=>t[0]===r[0]&&t[1]===r[1]&&t[3].includes(n)&&t[2]>r[2]); if(later.length) up.push({n,ev:r[0],disc:r[1],plate:r[2],title:later[0][2]}); }));
     const seen=new Set(), ups=up.filter(x=>{const k=x.n+x.ev+x.disc; if(seen.has(k))return false; seen.add(k); return true;}).sort((a,b)=>a.plate.localeCompare(b.plate));
     h+=`<div class="recs" style="margin-top:12px">`;
-    h+=miniCard("Most plate wins","All tournaments, singles and doubles.",["Player","r:Plates"],most.map(([n,k])=>trow([TIP(n),[k]])));
+    h+=miniCard("Most plate wins",`All tournaments, singles and doubles${S.plU?", including U25 and University":" (not U25 or University)"}.`,["Player","r:Plates"],most.map(([n,k])=>trow([TIP(n),[k]])));
     h+=miniCard("Most plate wins at one tournament","",["Player","Tournament","r:Plates"],one.map(([k,v])=>trow([TIP(k.split("|")[0]),esc(evL(k.split("|")[1])),[v]])));
     h+=miniCard("Most plate wins in a season","",["Player","Season","r:Plates"],season.map(([k,v])=>trow([TIP(k.split("|")[0]),esc(k.split("|")[1]),[v]])));
     h+=miniCard("From plate to champion","Won the plate, then later the title at the same tournament.",["Player","Tournament","Plate","Title"],
@@ -3245,6 +3248,7 @@ $("#ac-q").addEventListener("input",renderAchieve);
 $("#wi-q").addEventListener("input",e=>{S.wq=e.target.value; renderWinch();});
 $("#wi-se").addEventListener("change",e=>{S.wse=e.target.value; renderWinch();});
 $("#h2h-u").addEventListener("click",()=>{S.inclU=!S.inclU; renderH2H(); writeHash();});
+$("#pl-u").addEventListener("click",()=>{S.plU=!S.plU; renderPlates();});
 document.addEventListener("toggle",e=>{ if(e.target&&e.target.id==="we-box") S.weOpen=e.target.open; },true);
 document.addEventListener("change",e=>{ const t=e.target; if(t&&t.classList&&t.classList.contains("we-p")){ S.wePart[t.dataset.side]=t.value.trim(); weDoubles(S.a,S.b); } });
 // the draw scrolls inside its own box sized to the dialog, so its left/right bar stays on screen at the top of the draw
