@@ -2064,7 +2064,7 @@ function playerRecordsHTML(p){
       <span class="rmed">${x.joint?"=":""}${x.rk}</span>
       <span class="rbody"><b>${esc(x.title)}${x.times>1?` <span class="rtimes">×${x.times}</span>`:""}</b><small>${[x.partner?"with "+esc(x.partner):"",x.ctx&&x.ctx!==x.partner?esc(x.ctx):"",esc(x.lab)+(x.disc?` · ${x.disc.toLowerCase()}`:"")].filter(Boolean).join(" · ")}</small></span>
       ${x.val?`<span class="rval">${esc(x.val)}${x.vlab?`<small>${esc(x.vlab)}</small>`:""}</span>`:""}</button>`;
-  const block=(A,more)=>{ const SHOW=12, head=A.slice(0,SHOW), rest=A.slice(SHOW);
+  const block=(A,more)=>{ const SHOW=Math.max(12,A.filter(x=>x.rk===1).length), head=A.slice(0,SHOW), rest=A.slice(SHOW);   // every 1st always shows; others fill up to 12, the rest fold
     return `<div class="rgrid">${head.map(tile).join("")}</div>${rest.length?`<details class="rmore"><summary>${more} (${A.length})</summary><div class="rgrid">${rest.map(tile).join("")}</div></details>`:""}`; };
   const G=L.filter(x=>x.tab!=="tourns"), T=L.filter(x=>x.tab==="tourns");
   if(!L.length) return `<h3 style="margin-top:20px">Records held – ${S.disc.toLowerCase()}</h3>${other}`;
