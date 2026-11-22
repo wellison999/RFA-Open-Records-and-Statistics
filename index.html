@@ -276,6 +276,7 @@ th.ch-s{color:var(--singles)}th.ch-d{color:var(--doubles)}
 #tv-d .btn[aria-pressed="true"],#se-prev:not(:disabled):hover,#se-next:not(:disabled):hover{background:var(--accent);color:#fff;border-color:var(--accent)}
 .pt-stat{border-top:4px solid var(--c);border-radius:6px}.pt-stat .num{color:var(--c)}
 .sp.run{cursor:pointer;font:inherit;font-size:12.5px;background:color-mix(in srgb,var(--c) var(--k,30%),transparent);color:var(--rc,inherit);border:1px solid color-mix(in srgb,var(--c) 45%,transparent);font-weight:600}
+.ru-cnt{display:block;width:fit-content;margin:3px 0 0 auto;font-weight:600}.ru-pills{display:block;margin-top:3px}.ttab td>.ru-pills:first-child{margin-top:0}
 .sp.run i{font-style:normal;font-weight:400;opacity:.8;margin-left:3px}
 .runyrs[hidden],.sp.run[hidden]{display:none}
 .ttab{table-layout:fixed;width:100%}.ttab th:nth-child(1){width:19%}.ttab th:nth-child(2),.ttab th:nth-child(4){width:62px}.ttab th:nth-child(3){width:26%}
@@ -1914,10 +1915,12 @@ function playerTitlesHTML(p){
   if((o&&o.S+o.D)||hasW){
     if(!o||!(o.S+o.D)){ h+=`<p class="sub">No open tournament titles recorded.</p>`; }
   }
-  if(o&&o.S+o.D){
+  const natLost=o?L.filter(r=>isNat(r[0])&&r[4].includes(p)):[];
+  if(o&&(o.S+o.D||natLost.length)){
     const tile=(n,l,c)=>`<div class="stat pt-stat" style="--c:${c}"><div class="num">${n}</div><div class="muted">${l}</div></div>`;
-    h+=`<div class="rec-head">${tile(o.S+o.D,"open titles (ex. Winchester)","var(--accent)")}${tile(o.S,"singles",CS)}${tile(o.D,"doubles (ex. Winchester)",CD)}${tile(`${o.NS}/${o.ND}`,"National singles / doubles titles",CN)}</div>`;
+    if(o.S+o.D) h+=`<div class="rec-head">${tile(o.S+o.D,"open titles (ex. Winchester)","var(--accent)")}${tile(o.S,"singles",CS)}${tile(o.D,"doubles (ex. Winchester)",CD)}${tile(`${o.NS}/${o.ND}`,"National singles / doubles titles",CN)}</div>`;
     const g={}; o.rows.forEach(i=>{const r=L[i], ev=isNat(r[0])?"Nationals":r[0]; (g[ev]=g[ev]||{S:[],D:[]})[r[1][0]].push(r);});
+    const ru={S:[],D:[]}; natLost.forEach(r=>{ g.Nationals=g.Nationals||{S:[],D:[]}; ru[r[1][0]].push(r); });   // National finals lost: silver pills on the Nationals row
     const mx=Math.max(1,...Object.values(g).flatMap(v=>[v.S.length,v.D.length]));
     const heat=(n,c)=>n?`<span class="cnt-heat" style="background:color-mix(in srgb,${c} ${Math.round(14+66*n/mx)}%,transparent);color:${n/mx>.5?"#fff":"inherit"}">${n}</span>`:"";
     const H=titleIndex().held, f=o.first, l=o.last;
@@ -1931,27 +1934,32 @@ function playerTitlesHTML(p){
       return ""; };
     const na=t=>`<td class="r na" title="${esc(t)}">–</td><td class="na muted" style="font-size:12.5px">${esc(t)}</td>`;
     // unbroken runs (consecutive editions held; doubles: same partner) shown as one range pill, deeper colour for longer runs; click to see each year
-    const runPills=(rows,c,lab)=>{ const out=[]; let cur=[];
-      const key=r=>r[1]==="Doubles"?r[3].filter(x=>x!==p).join(", "):"";
+    const runPills=(rows,c,lab,side=3)=>{ const out=[]; let cur=[];
+      const key=r=>r[1]==="Doubles"?r[side].filter(x=>x!==p).join(", "):"";
       const idx=r=>{ const h=[...new Set(H[r[0]+"|"+r[1]]||[])].sort(); return h.indexOf(r[2]); };
       const flush=()=>{ if(!cur.length) return;
         if(cur.length<3) cur.forEach(r=>out.push(TLt(r,pill(lab(r),c))));
         else { const a=evYear0(cur[0][0],cur[0][2],cur[0][1]), b=evYear0(cur[cur.length-1][0],cur[cur.length-1][2],cur[cur.length-1][1]), n=cur.length;
           const yb=String(b), rng=String(a).slice(0,2)===yb.slice(0,2)?`${a}–${yb.slice(2)}`:`${a}–${yb}`, k=Math.min(85,22+7*n), pt=key(cur[0]);
           const bw=n>=15?4:n>=10?3:n>=5?2:1;
-          out.push(`<span class="runwrap"><button class="sp run" data-runx style="--c:${c};--k:${k}%;border:${bw}px solid ${c};${k>55?"--rc:#fff;":""}" title="${n} in a row – click for each year">${rng}<i>×${n}</i>${pt?` <span style="opacity:.8;font-weight:400">(${esc(pt)})</span>`:""}</button><span class="runyrs" hidden>${cur.map(r=>TLt(r,pill(lab(r),c))).join("")}</span></span>`); }
+          out.push(`<span class="runwrap"><button class="sp run" data-runx style="--c:${c};--k:${k}%;border:${bw}px solid ${c};${k>55?"--rc:#fff;":""}" title="${n} ${side===4?"finals lost ":""}in a row – click for each year">${rng}<i>×${n}</i>${pt?` <span style="opacity:.8;font-weight:400">(${esc(pt)})</span>`:""}</button><span class="runyrs" hidden>${cur.map(r=>TLt(r,pill(lab(r),c))).join("")}</span></span>`); }
         cur=[]; };
       rows.forEach(r=>{ const q=cur[cur.length-1]; if(q&&(idx(r)!==idx(q)+1||key(r)!==key(q))) flush(); cur.push(r); }); flush();
       return out.join(""); };
     const labD=r=>rYear(r)+(r[3].length>1?` <span style="opacity:.75">(${esc(r[3].filter(x=>x!==p).join(", "))})</span>`:"");
+    const labDL=r=>rYear(r)+(r[4].length>1?` <span style="opacity:.75">(${esc(r[4].filter(x=>x!==p).join(", "))})</span>`:"");
+    const CR="#8A97A6";   // silver: National final lost
+    const ruCnt=n=>n?`<span class="cnt-heat ru-cnt" style="background:color-mix(in srgb,${CR} 30%,transparent)" title="National finals lost">${n}</span>`:"";
+    const ruPills=(rows,lab)=>rows.length?`<span class="ru-pills">${runPills(rows,CR,lab,4)}</span>`:"";
     const ORD=["Nationals",...EV_ORDER.filter(e=>!isNat(e))];
 
     h+=`<div class="tablewrap" style="max-height:none;margin-top:8px"><table class="ttab"><thead><tr><th>Tournament</th><th class="r">Singles</th><th>Years</th><th class="r">Doubles</th><th>Years (partner)</th></tr></thead><tbody>`+
       ORD.filter(e=>g[e]).map(e=>{const nat=e==="Nationals", cS=CS, cD=CD, wS=g[e].S.length?"":why(e,"Singles"), wD=g[e].D.length?"":why(e,"Doubles");
         return `<tr${nat?' class="natrow"':""}><td style="white-space:nowrap">${nat?svg("trophy",CN,16)+" <b>National Championships</b>":esc(evL(e))}</td>`+
-        (wS?na(wS):`<td class="r">${heat(g[e].S.length,nat?CN:cS)}</td><td>${runPills(g[e].S,cS,r=>rYear(r))}</td>`)+
-        (wD?na(wD):`<td class="r">${heat(g[e].D.length,nat?CN:cD)}</td><td>${runPills(g[e].D,cD,labD)}</td>`)+`</tr>`;}).join("")+wbRow()+`</tbody></table></div>`;
+        (wS?na(wS):`<td class="r">${heat(g[e].S.length,nat?CN:cS)}${nat?ruCnt(ru.S.length):""}</td><td>${runPills(g[e].S,cS,r=>rYear(r))}${nat?ruPills(ru.S,r=>rYear(r)):""}</td>`)+
+        (wD?na(wD):`<td class="r">${heat(g[e].D.length,nat?CN:cD)}${nat?ruCnt(ru.D.length):""}</td><td>${runPills(g[e].D,cD,labD)}${nat?ruPills(ru.D,labDL):""}</td>`)+`</tr>`;}).join("")+wbRow()+`</tbody></table></div>`;
     if(/data-runx/.test(h)) h+=`<p style="margin:6px 0 0"><button class="btn" data-runall style="font-size:12.5px;padding:2px 10px">Show every year</button> <span class="muted" style="font-size:12.5px">Runs of three or more in a row are grouped; deeper colour = longer run.</span></p>`;
+    if(natLost.length) h+=`<p class="muted" style="margin:6px 0 0;font-size:12.5px"><span class="sp" style="--c:${CR}">silver</span> National final lost (runner-up).</p>`;
   }
   else if(wWon.length||wLost.length){
     h+=`<div class="tablewrap" style="max-height:none;margin-top:8px"><table class="ttab"><thead><tr><th>Tournament</th><th class="r">Singles</th><th>Years</th><th class="r">Doubles</th><th>Years (partner)</th></tr></thead><tbody>${wbRow()}</tbody></table></div>`;
@@ -1960,7 +1968,7 @@ function playerTitlesHTML(p){
     let wn=0,ls=0; wMs.forEach(m=>{const side=m[3].includes(p)?1:2; if(m[6]) m[6]===side?wn++:ls++;});
     h+=`<p class="sub" style="margin-top:6px"><b>Barnes Bridge (Winchester):</b> ${wLost.length?`runner-up ${wLost.length}× – ${wLost.map(r=>WBL(r[0],WY(r[0]))).join(", ")}. `:""}${wMs.length?`Recorded matches ${wn}–${ls}. `:""}<a href="#" data-tab="winch">Winchester tab</a></p>`;
   }
-  if(o&&(o.nsF||o.ndF)){
+  if(o&&(o.nsF||o.ndF)&&false){
     const lost=L.filter(r=>isNat(r[0])&&r[4].includes(p));
     h+=`<p class="sub" style="margin-top:10px"><b>National finals lost</b> (${o.nsF} singles, ${o.ndF} doubles): ${["Singles","Doubles"].map(d=>{ // singles first, then doubles; 3+ finals lost in a row collapse into one range pill
       const rows=lost.filter(r=>r[1]===d), Hh=titleIndex().held, all=[...new Set(Hh[(d==="Singles"?"National Singles":"National Doubles")+"|"+d]||[])].sort(), tag=d==="Singles"?"NS":"ND";
