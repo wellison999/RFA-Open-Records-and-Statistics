@@ -277,7 +277,7 @@ th.ch-s{color:var(--singles)}th.ch-d{color:var(--doubles)}
 .pt-stat{border-top:4px solid var(--c);border-radius:6px}.pt-stat .num{color:var(--c)}
 .sp.run{cursor:pointer;font:inherit;font-size:12.5px;background:color-mix(in srgb,var(--c) var(--k,30%),transparent);color:var(--rc,inherit);border:1px solid color-mix(in srgb,var(--c) 45%,transparent);font-weight:600}
 .mcnt{display:inline-flex;align-items:center;justify-content:center;min-width:21px;height:21px;padding:0 4px;margin-right:4px;border-radius:50%;background:var(--mc);color:#fff;font:700 11.5px Poppins,Barlow,sans-serif;text-shadow:0 1px 1px rgba(0,0,0,.35);box-shadow:inset 0 -2px 0 rgba(0,0,0,.2),0 0 0 1.5px color-mix(in srgb,#fff 35%,transparent);vertical-align:-5px;box-sizing:border-box}
-.mline .mcnt{margin:0 2px}
+.mline .mcnt{margin:0 2px}.mbtn{background:none;border:0;padding:2px 3px;border-radius:999px;cursor:pointer;font:inherit;color:inherit}.mbtn:hover{background:color-mix(in srgb,var(--accent) 12%,transparent)}
 .rsum .msum{background:none}.rsum .msum i{background:var(--mc)}
 .msum{display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 6px;border-radius:999px;font-weight:600;font-size:13px;border:1px solid var(--rule)}.msum i{width:14px;height:14px;border-radius:50%;background:var(--mc);display:inline-block}
 .bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(330px,100%),1fr));gap:8px;margin-top:8px}
@@ -2031,7 +2031,7 @@ function playerTitlesHTML(p){
   if(plates.length) h+=`<p class="sub" style="margin-top:8px"><b>Plate wins (${plates.length}):</b> ${plates.map(r=>pill(`${esc(evL(r[0]))} ${/singles|doubles/i.test(evL(r[0]))?"":r[1].toLowerCase()+" "}${r[3]!=="Plate"?esc(r[3].toLowerCase())+" ":""}${rYear(r)}`,CP)).join("")}</p>`;
   const A=achieveIndex().by[p];
   const VV=achieveIndex().views, vs=["S","D"].map(v=>VV[v].list.find(o=>o.a.n===p)).filter(Boolean);
-  if(A) h+=`<p class="sub" style="margin-top:8px">Achievements: ${tierBadge(A.tier)} <b>${esc(A.tier.name)}</b> · ${A.pts} points · #${A.rank} of ${achieveIndex().list.length}${vs.map(o=>` · ${tierBadge(o.tier)} ${esc(o.tier.name)} (#${o.rank})`).join("")} ${A.badges.length?` · <span class="mline">${metalCounts(A.badges)}</span> badges`:""} <a href="#" data-tab="achieve">see all</a></p>`;
+  if(A) h+=`<p class="sub" style="margin-top:8px">Achievements: ${tierBadge(A.tier)} <b>${esc(A.tier.name)}</b> · ${A.pts} points · #${A.rank} of ${achieveIndex().list.length}${vs.map(o=>` · ${tierBadge(o.tier)} ${esc(o.tier.name)} (#${o.rank})`).join("")} ${A.badges.length?` · <button class="mbtn mline" data-pbadges="${esc(p)}" title="See all their badges">${metalCounts(A.badges)}</button> badges`:""} <a href="#" data-tab="achieve">see all</a></p>`;
   return h;
 }
 
@@ -2137,8 +2137,8 @@ function playerRecordsHTML(p){
   const block=(A,more)=>{ const SHOW=Math.max(12,A.filter(x=>x.rk===1).length), head=A.slice(0,SHOW), rest=A.slice(SHOW);   // every 1st always shows; others fill up to 12, the rest fold
     return `<div class="bgrid">${head.map(tile).join("")}</div>${rest.length?`<details class="rmore"><summary>${more} (${A.length})</summary><div class="bgrid">${rest.map(tile).join("")}</div></details>`:""}`; };
   const G=L.filter(x=>x.tab!=="tourns"), T=L.filter(x=>x.tab==="tourns");
-  if(!L.length) return `<h3 style="margin-top:20px">Records held – ${S.disc.toLowerCase()}/combined</h3>${other}`;
-  return `<h3 style="margin-top:20px">Records held – ${S.disc.toLowerCase()}/combined</h3>
+  if(!L.length) return `<h3 style="margin-top:20px">Other records held – ${S.disc.toLowerCase()}/combined</h3>${other}`;
+  return `<h3 style="margin-top:20px">Other records held – ${S.disc.toLowerCase()}/combined</h3>
     <p class="sub" style="margin-bottom:6px">Top-three places on the site's ${S.disc.toLowerCase()} record boards and the boards that cover both (= tied; ×2 = holds two of the top places). Click one to open its board.</p>
     <div class="rsum">${cnt.map((c,i)=>c?`<span style="--medal:${MEDAL[i]}"><i></i>${c} × ${ORD[i]}</span>`:"").join("")}</div>
     ${G.length?block(G,"Show all"):""}
@@ -2316,8 +2316,8 @@ const ORDN=["1st","2nd","3rd"];
 // records of player p in the discipline in view (plus boards covering both), regional finals left out
 function playerRecList(p){ const regFin=x=>/most finals|consecutive finals|finals in one season/i.test(x.title)&&!/national/i.test(x.title);
   return (recordIndex()[p]||[]).filter(x=>!regFin(x)); }
-function badgeRecords(p,A){ if(!REC_IX||!A) return {}; const L=playerRecList(p).filter(x=>!x.disc||x.disc===S.disc), o={};
-  A.badges.forEach(b=>{ const f=BREC[b.id]; if(!f) return; const m=L.filter(x=>f(x.title,x)).sort((a,b)=>a.rk-b.rk)[0]; if(m) o[b.id]=m; }); return o; }
+function badgeRecords(p,A){ if(!REC_IX||!A) return {}; const ALL=playerRecList(p), L=ALL.filter(x=>!x.disc||x.disc===S.disc), O=ALL.filter(x=>x.disc&&x.disc!==S.disc), o={};
+  A.badges.forEach(b=>{ const f=BREC[b.id]; if(!f) return; const best=X=>X.filter(x=>f(x.title,x)).sort((a,b)=>a.rk-b.rk)[0], m=best(L)||best(O); if(m) o[b.id]=m; }); return o; }   // the board in view first, else the other discipline's
 const BWHITE={one:"one",weekend:"calendar",perfect:"check",map:"pin"};   // badges whose usual icon has white detail: use the cut-out version on the coloured square
 function playerBadgesHTML(A,p){
   if(!A||!A.badges.length) return "";
@@ -2355,6 +2355,12 @@ function playerTiersHTML(p){ const I=achieveIndex(), A=I.by[p]; if(!A) return ""
         <span class="bbar"><i style="width:${pct}%"></i></span><small class="bnext">${hasUp?`${(up.min-pts).toLocaleString()} more for ${esc(bare(up.name))} (${up.min.toLocaleString()})`:"Top title"}</small></span>
       <span class="rval">${pts.toLocaleString()}<small>points</small></span></button>`; };
   return `<h3 style="margin-top:20px">Achievement titles</h3><div class="bgrid">${rows.map(tile).join("")}</div>`; }
+// one player's badges in a pop-out (from the medal counts on the Achievements board or the profile line)
+function openPlayerBadges(n){ const A=achieveIndex().by[n]; if(!A) return;
+  $("#tdlg-title").textContent=`${n} – badges`;
+  $("#tdlg-body").innerHTML=playerBadgesHTML(A,n).replace(/^\s*<h3[\s\S]*?<\/h3>/,"")+`<p style="margin-top:12px"><button class="linkbtn" data-open="${esc(n)}">Open ${esc(n)}'s profile</button></p>`;
+  const d=$("#tdlg"); if(d.showModal) d.showModal(); else d.setAttribute("open","");
+  if(!REC_IX) setTimeout(()=>{ recordIndex(); if(d.open&&$("#tdlg-title").textContent===`${n} – badges`) openPlayerBadges(n); },60); }   // add the record chips once the boards are read
 // the full list of badges in a pop-out: what each is for, the four levels and how many players hold each
 function openBadgeKey(){
   const L=achieveIndex().list, cnt=(id,lv)=>L.filter(a=>a.badges.some(x=>x.id===id&&x.lv===lv)).length;
@@ -2470,7 +2476,7 @@ function renderAchieve(){
   $("#ac-body").innerHTML=`<div class="tablewrap" style="margin-top:12px"><table class="ach"><thead><tr><th class="r">#</th><th>Player</th><th>Title</th><th class="r">Points</th>${head}<th title="Badges count singles and doubles together">Badges${v!=="all"?" (career)":""}</th></tr></thead><tbody>`+
     rows.slice(0,400).map(o=>{const a=o.a; return `<tr data-ach="${esc(a.n)}" style="cursor:pointer"><td class="r"><span class="rank">${o.rank}</span></td><td>${TIP(a.n)}</td>
       <td style="white-space:nowrap">${tierBadge(o.tier)} <span style="color:${o.tier.col};font-weight:600">${o.tier.name}</span></td><td class="r"><b>${o.pts}</b></td>
-      ${cells(o)}<td style="white-space:nowrap">${metalCounts(a.badges)}</td></tr>
+      ${cells(o)}<td style="white-space:nowrap">${a.badges.length?`<button class="mbtn" data-pbadges="${esc(a.n)}" title="See ${esc(a.n)}'s badges">${metalCounts(a.badges)}</button>`:""}</td></tr>
       <tr class="ach-det" data-achd="${esc(a.n)}" hidden><td></td><td colspan="${nc}">${keys.filter(k=>o.c[k]).map(k=>`${ACH_LABEL[k]}: ${o.c[k]} × ${ACH_PTS[k]} = <b>${o.c[k]*ACH_PTS[k]}</b>`).join(" · ")}${a.badges.length?`<br>${a.badges.map(b=>esc(b.name)).join(" · ")}`:""}</td></tr>`;}).join("")+`</tbody></table></div>`;
 }
 
@@ -3432,7 +3438,8 @@ document.addEventListener("click",e=>{
   const wc=e.target.closest("[data-winch]"); if(wc){e.preventDefault(); return openWinch(wc.dataset.winch,S.tab==="player"?S.player:"");}
   const t=e.target.closest("button,a"); if(!t) return;
   if(t.dataset.badgekey){ openBadgeKey(); return; }
-  if(t.dataset.rgo){ const [tab,d]=t.dataset.rgo.split("|"); if(tab==="tourns"&&t.dataset.rev){ const [e,v]=t.dataset.rev.split("|"); S.ev=e; S.evd=v; } if(tab==="plates"){S.psub="stats";S.plU=false;} if(tab==="winch") S.wsub="stats"; if(tab==="pairs") S.pair=null;
+  if(t.dataset.pbadges){ openPlayerBadges(t.dataset.pbadges); return; }
+  if(t.dataset.rgo){ const dl=$("#tdlg"); if(dl.open) dl.close(); const [tab,d]=t.dataset.rgo.split("|"); if(tab==="tourns"&&t.dataset.rev){ const [e,v]=t.dataset.rev.split("|"); S.ev=e; S.evd=v; } if(tab==="plates"){S.psub="stats";S.plU=false;} if(tab==="winch") S.wsub="stats"; if(tab==="pairs") S.pair=null;
     if(d&&d!==S.disc){ S.disc=d; document.body.dataset.disc=d; document.querySelectorAll(".seg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.disc===d)); }
     setTab(tab); window.scrollTo(0,0); return; }
   if(t.dataset.season){e.preventDefault(); S.se=t.dataset.season; setTab("seasons"); window.scrollTo(0,0); return;}
@@ -3509,7 +3516,7 @@ $("#h2h-b").addEventListener("change",e=>{S.b=e.target.value.trim(); renderH2H()
 $("#h2h-swap").addEventListener("click",()=>{[S.a,S.b]=[S.b,S.a]; renderH2H(); writeHash();});
 $("#elo-search").addEventListener("input",renderElo);
 document.addEventListener("click",e=>{
-  const b=e.target.closest("[data-tsub],[data-tdisc],[data-psub],[data-pdisc],[data-wsub],tr[data-ach]"); if(!b||e.target.closest("[data-open]")) return;
+  const b=e.target.closest("[data-tsub],[data-tdisc],[data-psub],[data-pdisc],[data-wsub],tr[data-ach]"); if(!b||e.target.closest("[data-open],[data-pbadges]")) return;
   if(b.dataset.wsub){S.wsub=b.dataset.wsub; renderWinch(); return;}
   if(b.dataset.tsub){S.tsub=b.dataset.tsub; renderTitles(); writeHash();}
   else if(b.dataset.tdisc){S.tdisc=b.dataset.tdisc; renderTitles();}
