@@ -285,7 +285,7 @@ th.ch-s{color:var(--singles)}th.ch-d{color:var(--doubles)}
 .pljump a{padding:4px 11px;border-radius:999px;border:1px solid var(--rule);font:600 12.5px Barlow,sans-serif;text-decoration:none;color:inherit;background:var(--panel)}
 .pljump a:hover{border-color:var(--accent);color:var(--accent)}.pljt{scroll-margin-top:70px}   /* jump-link targets (not .plsec, which is the profile's section band) */
 .mline .mcnt{margin:0 2px}.mbtn{background:none;border:0;padding:2px 3px;border-radius:999px;cursor:pointer;font:inherit;color:inherit}.mbtn:hover{background:color-mix(in srgb,var(--accent) 12%,transparent)}
-.rsum .msum{background:none}.rsum .msum i{background:var(--mc)}
+.rsum .msum{background:color-mix(in srgb,var(--medal) 14%,transparent)}.rsum .msum i{background:var(--mc)}
 .msum{display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 6px;border-radius:999px;font-weight:600;font-size:13px;border:1px solid var(--rule)}.msum i{width:14px;height:14px;border-radius:50%;background:var(--mc);display:inline-block}
 .bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(330px,100%),1fr));gap:8px;margin-top:8px}
 .btile{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border:1px solid var(--rule);border-radius:10px;background:var(--panel);position:relative;overflow:hidden;width:100%;color:inherit;font:inherit;text-align:left}
@@ -2347,7 +2347,7 @@ function playerBadgesHTML(A,p){
   const cnt=[4,3,2,1,0].map(lv=>[lv,bs.filter(b=>b.lv===lv).length]).filter(x=>x[1]);
   return `<h3 style="margin-top:20px">Badges <span class="muted" style="font-size:.7em;font-weight:500">career, singles and doubles together</span></h3>
     <p class="sub" style="margin-bottom:6px">Badges rise through iron, bronze, silver, gold and platinum as the achievement grows. <button class="linkbtn" data-badgekey="1">See all badges</button></p>
-    <div class="rsum">${cnt.map(([lv,c])=>`<span class="msum" style="--mc:${MGRAD[lv]}"><i></i>${c} ${METAL[lv].n.toLowerCase()}</span>`).join("")}</div>
+    <div class="rsum">${cnt.map(([lv,c])=>`<span class="msum" style="--mc:${MGRAD[lv]};--medal:${lv===4?"#7B2CBF":METAL[lv].c}"><i></i>${c} ${METAL[lv].n.toLowerCase()}</span>`).join("")}</div>
     <div class="bgrid">${bs.map(tile).join("")}</div>`;
 }
 const svg=(id,col,size=20)=>{const solid=col.startsWith("url")?"#3C096C":col; return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="${col}" style="color:${solid};vertical-align:-4px${col.startsWith("url")?";filter:drop-shadow(0 0 1.5px rgba(232,199,102,.85))":""}" aria-hidden="true">${ICON[id]}</svg>`;};
