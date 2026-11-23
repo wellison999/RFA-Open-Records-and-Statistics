@@ -1919,8 +1919,9 @@ function titleStatsHTML(){
   h+=miniCard("Most successful partnerships","Doubles titles won together.",["Pair","r:Titles","r:National","Seasons"],bestPairs.map(o=>trow([ppl(o.k.split(" & ")),[o.c],[o.nat],`<span class="muted">${esc(o.f)}–${esc(o.l)}</span>`])));
   h+=miniCard("Most title-winning partners","Different partners won a doubles title with.",["Player","r:Partners"],partners.map(o=>trow([TIP(o.n),[o.c]])));
   const BB={}; (TT().winch||[]).forEach(r=>r[1].forEach(n=>BB[n]=(BB[n]||0)+1));
-  h+=miniCard("Two-code champions","Rugby Fives open title winners who have also won the Barnes Bridge (Winchester Fives national doubles).",["Player","r:Rugby titles","r:Barnes Bridge"],
-    Object.keys(BB).filter(n=>X.by[n]&&X.by[n].S+X.by[n].D).map(n=>({n,r:X.by[n].S+X.by[n].D,b:BB[n]})).sort((a,b)=>b.r+b.b-a.r-a.b).topBy(10,(a,b)=>b.r+b.b-a.r-a.b).map(o=>trow([TIP(o.n),[o.r],[o.b]])));
+  { const cmp=(a,b)=>b.e-a.e||(b.nd+b.b)-(a.nd+a.b)||b.r-a.r;
+  h+=miniCard("Two-code champions","Rugby Fives open title winners who have also won the Barnes Bridge (Winchester Fives national doubles), ranked by national doubles titles of each code: the smaller of their National Doubles and Barnes Bridge counts.",["Player","r:Of each","r:National Doubles","r:Barnes Bridge","r:Rugby titles"],
+    Object.keys(BB).filter(n=>X.by[n]&&X.by[n].S+X.by[n].D).map(n=>({n,r:X.by[n].S+X.by[n].D,b:BB[n],nd:X.by[n].ND||0})).map(o=>({...o,e:Math.min(o.nd,o.b)})).sort(cmp).topBy(10,cmp).map(o=>trow([TIP(o.n),[o.e],[o.nd],[o.b],[o.r]]))); }
   h+=miniCard("Most different tournaments won","Counting singles and doubles separately.",["Player","r:Tournaments","r:Titles"],variety.map(o=>trow([TIP(o.n),[o.c],[o.t]])));
   h+=miniCard("Longest title-winning careers","First to latest title (three or more titles).",["Player","First","Latest","r:Years"],span.map(o=>trow([TIP(o.n),esc(o.f),esc(o.l),[o.y]])));
   h+=miniCard("Quickest to ten titles","Seasons from first title to tenth.",["Player","First","Tenth","r:Seasons"],fast.map(o=>trow([TIP(o.n),esc(o.from),esc(o.to),[o.y]])));
@@ -2281,6 +2282,8 @@ function BX(){ if(BX_) return BX_; const V={}, g=p=>V[p]=V[p]||{mwin:0,unstop:0,
   Object.entries(Y).forEach(([n,t])=>g(n).ranked=t.size);
   return BX_=V; }
 const bx=(a,k)=>(BX()[a.n]||{})[k]||0;
+// Two codes: national doubles titles in each code (the smaller of National Doubles and Barnes Bridge)
+function twoEach(n){ const X=titleIndex(), nd=(X.by[n]&&X.by[n].ND)||0, bb=(TT().winch||[]).filter(r=>r[1].includes(n)).length; return {nd,bb,e:Math.min(nd,bb)}; }
 const BADGES=[
   {id:"natS",name:"National Singles champion",unit:"titles",th:[null,1,3,5,10],val:a=>a.c.nsW},
   {id:"natD",name:"National Doubles champion",unit:"titles",th:[null,1,3,5,10],val:a=>a.c.ndW},
@@ -2297,7 +2300,7 @@ const BADGES=[
   {id:"perfect",name:"Perfect season – won every open singles (or doubles) title in one season",unit:"seasons",th:[null,1,2,3,5],val:a=>a.c.psS+a.c.psD},
   {id:"weekend",name:"Weekend double – won the singles and doubles at the same regional open",unit:"times",th:[null,5,10,15,20],val:a=>a.wkDbl||0},
   {id:"partners",name:"Partner-proof – won the National Doubles with more than one partner",unit:"partners",th:[null,2,3,4,5],val:a=>a.natPartners||0},
-  {id:"bridge",name:"Two codes – open title winner who also won the Barnes Bridge (Winchester Fives national doubles)",unit:"Barnes Bridge titles",th:[null,1,3,5,10],val:a=>a.titles>0?(a.winch||0):0},
+  {id:"bridge",name:"Two codes – national doubles champion in both codes: the Rugby Fives National Doubles and the Barnes Bridge (Winchester Fives). Counts the smaller of the two",unit:"of each",keyNote:"Counted in titles of each code; iron needs any open title plus a Barnes Bridge",th:[0,1,3,5,8],thl:["Open title + Barnes Bridge"],val:a=>a.titles>0&&a.winch>0?twoEach(a.n).e:-1},
   // added 22 Nov 2026. Match-based ones count recorded matches only (from 1988/89, with gaps until 2005), so they favour recent players
   {id:"mwin",name:"Match winner – matches won (main draws, recorded results)",unit:"wins",th:[25,100,200,300,450],val:a=>bx(a,"mwin")},
   {id:"unstop",name:"Unstoppable – matches won in a row",unit:"in a row",th:[5,10,20,30,50],val:a=>bx(a,"unstop")},
@@ -2342,7 +2345,7 @@ function playerBadgesHTML(A,p){
     return `<div class="btile" style="--mc:${MGRAD[b.lv]};--mt:${METAL[b.lv].t||METAL[b.lv].c}">
       <span class="bico"><svg viewBox="0 0 24 24" width="24" height="24" fill="#fff" style="color:#fff" aria-hidden="true">${(k=>RICON[k]||ICON[k])(BWHITE[b.id]||b.id)}</svg></span>
       <span class="bbody"><b>${esc(nm)}</b><span class="blev">${METAL[b.lv].n}</span>
-        ${desc?`<small>${esc(desc[0].toUpperCase()+desc.slice(1))}</small>`:""}
+        ${desc?`<small>${esc(desc[0].toUpperCase()+desc.slice(1))}</small>`:""}${b.id==="bridge"?(o=>`<small><b>${o.nd}</b> National Doubles · <b>${o.bb}</b> Barnes Bridge</small>`)(twoEach(p)):""}
         ${rc?`<button class="brec" style="--medal:${MEDAL[rc.rk-1]}" data-rgo="${rc.tab}|${rc.disc||""}"${rc.go?` data-rev="${esc(rc.go)}"`:""} title="Open the ${esc(rc.title)} board"><i></i>${rc.joint?"Joint ":""}${ORDN[rc.rk-1]} all-time${rc.disc?` in ${rc.disc.toLowerCase()}`:""}${rc.disc&&rc.val&&rc.val!==String(b.v)?` (${esc(rc.val)})`:""}</button>`:""}
         <span class="bbar"><i style="width:${pct}%"></i></span><small class="bnext">${hi?`${hi-b.v} more for ${METAL[nx].n.toLowerCase()} (${hi})`:"Top level"}</small></span>
       <span class="rval">${b.v}<small>${esc(unit(d,b.v))}</small></span></div>`; };
@@ -2392,8 +2395,8 @@ function openBadgeKey(){
     return `<div class="btile bkey" style="--mc:${MGRAD[top]};--mt:${METAL[top].t||METAL[top].c}">
       <span class="bico"><svg viewBox="0 0 24 24" width="24" height="24" fill="#fff" style="color:#fff" aria-hidden="true">${(k=>RICON[k]||ICON[k])(BWHITE[b.id]||b.id)}</svg></span>
       <span class="bbody"><b>${esc(nm)}</b>${desc?`<small>${esc(desc[0].toUpperCase()+desc.slice(1))}</small>`:""}
-        <span class="blad">${b.th.map((t,lv)=>t==null?"":`<span style="--mc:${MGRAD[lv]}" title="${cnt(b.id,lv)} player${cnt(b.id,lv)===1?"":"s"} at ${METAL[lv].n.toLowerCase()}"><i></i>${t}+ <em>${cnt(b.id,lv)}</em></span>`).join("")}</span>
-        <small class="bnext">${/in a row/.test(b.unit)?"Counted as a run in a row":"Counted in "+esc(b.unit)}</small></span></div>`; };
+        <span class="blad">${b.th.map((t,lv)=>t==null?"":`<span style="--mc:${MGRAD[lv]}" title="${cnt(b.id,lv)} player${cnt(b.id,lv)===1?"":"s"} at ${METAL[lv].n.toLowerCase()}"><i></i>${(b.thl&&b.thl[lv])||t+"+"} <em>${cnt(b.id,lv)}</em></span>`).join("")}</span>
+        <small class="bnext">${b.keyNote?esc(b.keyNote):/in a row/.test(b.unit)?"Counted as a run in a row":"Counted in "+esc(b.unit)}</small></span></div>`; };
   $("#tdlg-title").textContent=`All badges (${BADGES.length})`;
   $("#tdlg-body").innerHTML=`<p class="sub" style="margin:0 0 10px">Each badge rises through ${METAL.map(m=>`<b style="color:${m.t||m.c}">${m.n.toLowerCase()}</b>`).join(", ")}. Each level shows what it takes and, in grey, how many players hold it. Badges don't score points. Badges from match results count recorded matches only (from 1988/89, with gaps until 2005).</p><div class="bgrid">${BADGES.map(card).join("")}</div>`;
   const d=$("#tdlg"); if(d.showModal) d.showModal(); else d.setAttribute("open","");
@@ -2540,7 +2543,7 @@ function renderWinch(){
     const held=W.map(r=>r[0]), runs=[];
     Object.keys(c).forEach(n=>{const ss=W.filter(r=>r[1].includes(n)).map(r=>r[0]); allRuns(ss,held).forEach(rr=>runs.push({n,...rr}));});
     const L=TT().list, X=titleIndex();
-    const two=Object.keys(c).filter(n=>X.by[n]&&X.by[n].S+X.by[n].D>0).map(n=>({n,b:c[n],r:X.by[n].S+X.by[n].D,nd:X.by[n].ND})).sort((a,b)=>b.b-a.b||b.r-a.r);
+    const two=Object.keys(c).filter(n=>X.by[n]&&X.by[n].S+X.by[n].D>0).map(n=>({n,b:c[n],r:X.by[n].S+X.by[n].D,nd:X.by[n].ND||0})).map(o=>({...o,e:Math.min(o.nd,o.b)})).sort((a,b)=>b.e-a.e||(b.nd+b.b)-(a.nd+a.b)||b.r-a.r);
     const same=[]; W.forEach(r=>r[1].forEach(n=>{ if(L.some(t=>t[0]==="National Doubles"&&t[2]===r[0]&&t[3].includes(n))) same.push({n,se:r[0]}); }));
     h=`<div class="recs" style="margin-top:12px">`+
       miniCard("Most Barnes Bridge titles","",["Player","r:Titles"],Object.entries(c).sort((a,b)=>b[1]-a[1]).topBy(12,(a,b)=>b[1]-a[1]).map(([n,k])=>trow([TIP(n),[k]])))+
@@ -2548,7 +2551,7 @@ function renderWinch(){
       miniCard("Longest winning runs","Consecutive Barnes Bridges won (2021 wasn't held).",["Player","r:In a row","Years"],runs.sort((a,b)=>b.run-a.run).topBy(10,(a,b)=>b.run-a.run).map(o=>trow([TIP(o.n),[o.run],`<span class="muted">${WBL(o.from,WY(o.from))}–${WBL(o.to,WY(o.to))}</span>`])))+
       miniCard("Most finals",ruNote(W.map(r=>["Barnes Bridge","Doubles",r[0],r[1],r[2]]),r=>WY(r[2]))||"",["Player","r:Finals","r:Won"],Object.entries(fin).sort((a,b)=>b[1].f-a[1].f||b[1].w-a[1].w).topBy(10,(a,b)=>b[1].f-a[1].f||b[1].w-a[1].w).map(([n,o])=>trow([TIP(n),[o.f],[o.w]])))+
       miniCard("Most title-winning partners","",["Player","r:Partners"],Object.entries(partners).sort((a,b)=>b[1].size-a[1].size).topBy(8,(a,b)=>b[1].size-a[1].size).map(([n,st])=>trow([TIP(n),[st.size]])))+
-      miniCard("Two-code champions","Barnes Bridge winners who have also won Rugby Fives open titles.",["Player","r:Barnes Bridge","r:Rugby titles","r:National Doubles"],two.map(o=>trow([TIP(o.n),[o.b],[o.r],[o.nd]])))+
+      miniCard("Two-code champions","Barnes Bridge winners who have also won Rugby Fives open titles, ranked by national doubles titles of each code (the smaller of their Barnes Bridge and National Doubles counts).",["Player","r:Of each","r:Barnes Bridge","r:National Doubles","r:Rugby titles"],two.map(o=>trow([TIP(o.n),[o.e],[o.b],[o.nd],[o.r]])))+
       miniCard("Same-season national doubles","Won the Rugby Fives National Doubles and the Barnes Bridge in the same season.",["Player","Year"],same.map(o=>trow([TIP(o.n),WBL(o.se,WY(o.se))])),false)+`</div>`;
   }
   $("#wi-body").innerHTML=h;
