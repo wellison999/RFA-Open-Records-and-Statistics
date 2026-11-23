@@ -2140,7 +2140,8 @@ const RICON_RULES=[[/two-code/,"bridge"],[/plate/,"plate"],[/clean sweep/,"broom
 const recIcon=x=>{ if(x.lab==="Barnes Bridge") return "bridge"; if(x.lab==="Elo honours") return /top 3/i.test(x.title)?"podium":/top of/i.test(x.title)?"one":"bolt";
   const t=x.title.toLowerCase(); const r=RICON_RULES.find(([rx])=>rx.test(t)); return r?r[1]:"trophy"; };
 function playerRecordsHTML(p,mode){
-  const BRx=new Set(Object.values(badgeRecords(p,achieveIndex().by[p])));   // shown on a badge instead
+  const BRx=new Set(Object.values(badgeRecords(p,achieveIndex().by[p])));
+  { const A0=achieveIndex().by[p]; if(A0&&A0.badges.some(b=>b.id==="bridge")) playerRecList(p).filter(x=>x.title==="Two-code champions").forEach(x=>BRx.add(x)); }   // both Two-code boards (Title records and Barnes Bridge) are covered by the badge   // shown on a badge instead
   const C=mode==="career", ALL=playerRecList(p).filter(x=>!BRx.has(x)), L=ALL.filter(x=>C?!x.disc:x.disc===S.disc);
   if(!L.length) return "";
   const ORD=["1st","2nd","3rd"], cnt=[1,2,3].map(k=>L.filter(x=>x.rk===k).length);
@@ -2323,7 +2324,7 @@ const metalCounts=bs=>[4,3,2,1,0].map(lv=>{ const g=bs.filter(b=>b.lv===lv); ret
 const BREC={one:t=>t==="Season-end No. 1s", clock:t=>t==="Most season-end top-10 finishes", map:t=>t==="Most different tournaments won",
   broom:t=>/^Career clean sweeps/.test(t), perfect:t=>/^Perfect seasons/.test(t), flame:t=>t==="Longest runs of National titles", finals:t=>t==="Longest runs of National finals",
   finalist:t=>/^Most National (Singles|Doubles) finals$/.test(t), natS:t=>t==="Most titles – National Singles", natD:t=>t==="Most titles – National Doubles",
-  double:t=>/^The double – National Championships/.test(t), bridge:(t,x)=>t==="Two-code champions"&&x.lab==="Barnes Bridge", streak:t=>t==="Longest unbeaten runs at one tournament",
+  double:t=>/^The double – National Championships/.test(t), bridge:t=>t==="Two-code champions", streak:t=>t==="Longest unbeaten runs at one tournament",
   mwin:t=>t==="Most matches won", unstop:t=>t==="Longest winning streaks", nerves:t=>t==="Deciders won", comeback:t=>t==="Comeback kings", bagel:t=>t==="Bagels served",
   ranked:t=>t==="Longest ranked careers", career:t=>t==="Longest title-winning careers", pship:(t,x)=>t==="Most successful partnerships"&&x.lab==="Title records",
   team:(t,x)=>t==="Most title-winning partners"&&x.lab==="Title records", plates:t=>t==="Most plate wins"};
