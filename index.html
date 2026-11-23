@@ -2259,8 +2259,8 @@ const ICON={
   finalist:'<path d="M5 3h14v5a7 7 0 0 1-14 0z"/><path d="M9 14l-3 8 6-3 6 3-3-8"/><text x="12" y="10" text-anchor="middle" font-size="7" font-weight="700" fill="#fff" font-family="sans-serif">F</text>',
   clock:'<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M12 7v5l3 3" fill="none" stroke="currentColor" stroke-width="2.5"/>',
   ball:'<circle cx="12" cy="12" r="10"/><path d="M7 10a5.5 5.5 0 0 1 4-4" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>'};
-// Badges step up through wood, stone, iron, sapphire and diamond (gem levels, so they are not confused with gold/silver/bronze record places) as the achievement grows (th = the threshold for each level; null = level not used)
-const METAL=[{n:"Wood",c:"#9C7A54",t:"#8A6A45"},{n:"Stone",c:"#A8A29E",t:"#78716C"},{n:"Iron",c:"#3F4650"},{n:"Sapphire",c:"#1D4ED8"},{n:"Diamond",c:"url(#platgrad)",t:"#2C8DBF"}];
+// Badges step up through wood, stone, jade, sapphire and diamond (gem levels, so they are not confused with gold/silver/bronze record places) as the achievement grows (th = the threshold for each level; null = level not used)
+const METAL=[{n:"Wood",c:"#9C7A54",t:"#8A6A45"},{n:"Stone",c:"#A8A29E",t:"#78716C"},{n:"Jade",c:"#1F8A5E"},{n:"Sapphire",c:"#1D4ED8"},{n:"Diamond",c:"url(#platgrad)",t:"#2C8DBF"}];
 
 // icons for the badges added on 22 Nov 2026: solid shapes with cut-outs, so they work in metal colours and white on the profile squares
 Object.assign(ICON,{
@@ -2334,7 +2334,7 @@ const BADGES=[
 function badgeLevels(a){ return BADGES.map(b=>{const v=b.val(a); let lv=-1; b.th.forEach((t,i)=>{ if(t!=null&&v>=t) lv=i; }); if(lv<0) return null;
   return {id:b.id,col:METAL[lv].c,lv,v,def:b,name:`${b.name}: ${METAL[lv].n} (${v} ${v===1?b.unit.replace(/finishes$/,"finish").replace(/s$/,""):b.unit})`};}).filter(Boolean); }
 // medal counts: one small medal per level with the number of badges held at that level (Achievements board, profile line)
-const MGRAD=["repeating-linear-gradient(100deg,#A5835C 0 4px,#937049 4px 6px,#A07D55 6px 11px,#8C6A44 11px 12px)","linear-gradient(135deg,#C2BCB6 0%,#A8A29E 50%,#8F8984 100%)","linear-gradient(135deg,#76808C 0%,#4A525D 40%,#2B3139 100%)","linear-gradient(135deg,#7AA3FF 0%,#2F5FE8 28%,#1D4ED8 48%,#4A7DF7 60%,#1A44C2 78%,#122F8F 100%)","linear-gradient(135deg,#FFFFFF 0%,#EEF9FE 22%,#CFEFFB 42%,#FCEAF6 56%,#DDF3FC 70%,#FFFFFF 86%,#D6EFFA 100%)"];
+const MGRAD=["repeating-linear-gradient(100deg,#A5835C 0 4px,#937049 4px 6px,#A07D55 6px 11px,#8C6A44 11px 12px)","linear-gradient(135deg,#C2BCB6 0%,#A8A29E 50%,#8F8984 100%)","linear-gradient(135deg,#4FBF8A 0%,#1F8A5E 50%,#146B47 100%)","linear-gradient(135deg,#7AA3FF 0%,#2F5FE8 28%,#1D4ED8 48%,#4A7DF7 60%,#1A44C2 78%,#122F8F 100%)","linear-gradient(135deg,#FFFFFF 0%,#EEF9FE 22%,#CFEFFB 42%,#FCEAF6 56%,#DDF3FC 70%,#FFFFFF 86%,#D6EFFA 100%)"];
 const metalCounts=bs=>[4,3,2,1,0].map(lv=>{ const g=bs.filter(b=>b.lv===lv); return g.length?`<span class="mcnt" style="--mc:${MGRAD[lv]}" title="${g.length} ${METAL[lv].n.toLowerCase()}: ${esc(g.map(b=>b.def.name.split(" – ")[0]).join(", "))}">${g.length}</span>`:""; }).join("");
 // the profile's Badges section: every badge held, best first, with how far it is to the next level
 const BREC={one:t=>t==="Season-end No. 1s", clock:t=>t==="Most season-end top-10 finishes", map:t=>t==="Most different tournaments won",
@@ -2368,7 +2368,7 @@ function playerBadgesHTML(A,p){
       <span class="rval">${b.v}<small>${esc(unit(d,b.v))}</small></span></div>`; };
   const cnt=[4,3,2,1,0].map(lv=>[lv,bs.filter(b=>b.lv===lv).length]).filter(x=>x[1]);
   return `<h3 style="margin-top:20px">Badges <span class="muted" style="font-size:.7em;font-weight:500">career, singles and doubles together</span></h3>
-    <p class="sub" style="margin-bottom:6px">Badges rise through wood, stone, iron, sapphire and diamond as the achievement grows. <button class="linkbtn" data-badgekey="1">See all badges</button></p>
+    <p class="sub" style="margin-bottom:6px">Badges rise through wood, stone, jade, sapphire and diamond as the achievement grows. <button class="linkbtn" data-badgekey="1">See all badges</button></p>
     <div class="rsum">${cnt.map(([lv,c])=>`<span class="msum" style="--mc:${MGRAD[lv]};--medal:${lv===4?"#2C8DBF":METAL[lv].c}"><i></i>${c} ${METAL[lv].n.toLowerCase()}</span>`).join("")}</div>
     <div class="bgrid">${bs.map(tile).join("")}</div>`;
 }
