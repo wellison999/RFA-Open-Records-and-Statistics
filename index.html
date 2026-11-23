@@ -469,6 +469,15 @@ h2{font-size:22px} h3{font-size:16.5px}
 #acbox .aci:last-child{border-bottom:0}
 #acbox .aci:hover,#acbox .aci.on{background:var(--soft)}
 #acbox .aci b{font-weight:700}
+
+.btile.dia .bico{box-shadow:inset 0 0 0 1px rgba(44,141,191,.35),inset 0 -3px 0 rgba(44,141,191,.18),0 1px 4px rgba(44,141,191,.35)}
+.btile.dia .bico svg{fill:#1E4E73!important;color:#1E4E73!important;filter:drop-shadow(0 1px 0 rgba(255,255,255,.8))}
+.btile.dia .bico::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Cg fill='%23fff' stroke='%2378C6EA' stroke-width='.5'%3E%3Cpath d='M8 4l1.2 3.3L12.5 8.5 9.2 9.7 8 13 6.8 9.7 3.5 8.5 6.8 7.3z'/%3E%3Cpath d='M36 30l.9 2.5 2.6.9-2.6.9L36 37l-.9-2.7-2.6-.9 2.6-.9z'/%3E%3Cpath d='M37 6l.6 1.6 1.6.6-1.6.6L37 10.4l-.6-1.6-1.6-.6 1.6-.6z'/%3E%3C/g%3E%3C/svg%3E") center/100% 100% no-repeat,linear-gradient(115deg,transparent 30%,rgba(255,255,255,.85) 45%,transparent 60%) -60px 0/200% 100% no-repeat;animation:diaglint 3.2s ease-in-out infinite}
+@keyframes diaglint{0%,55%{background-position:center,-60px 0}80%,100%{background-position:center,60px 0}}
+@media (prefers-reduced-motion:reduce){.btile.dia .bico::after{animation:none}}
+.btile.dia::before{background:linear-gradient(#E6F7FE,#7FC8E8 50%,#F6DDF0)}
+.btile.dia .bbar i{background:linear-gradient(90deg,#DDF3FC,#7FC8E8 60%,#F2D3EC)}
+.msum i,.blad i{box-shadow:inset 0 0 0 1px rgba(0,0,0,.14)}
 </style>
 </head>
 <body data-disc="Singles">
@@ -2318,7 +2327,7 @@ const BADGES=[
 function badgeLevels(a){ return BADGES.map(b=>{const v=b.val(a); let lv=-1; b.th.forEach((t,i)=>{ if(t!=null&&v>=t) lv=i; }); if(lv<0) return null;
   return {id:b.id,col:METAL[lv].c,lv,v,def:b,name:`${b.name}: ${METAL[lv].n} (${v} ${v===1?b.unit.replace(/finishes$/,"finish").replace(/s$/,""):b.unit})`};}).filter(Boolean); }
 // medal counts: one small medal per level with the number of badges held at that level (Achievements board, profile line)
-const MGRAD=["#78716C","#1F8A5E","#1D4ED8","linear-gradient(135deg,#B565D0 0%,#8E2FAE 55%,#6B1F8A 100%)","linear-gradient(135deg,#BFEAFB 0%,#5BB8E0 30%,#1F6FA3 65%,#9FDDF5 100%)"];
+const MGRAD=["#78716C","#1F8A5E","#1D4ED8","linear-gradient(135deg,#B565D0 0%,#8E2FAE 55%,#6B1F8A 100%)","linear-gradient(135deg,#FFFFFF 0%,#EEF9FE 22%,#CFEFFB 42%,#FCEAF6 56%,#DDF3FC 70%,#FFFFFF 86%,#D6EFFA 100%)"];
 const metalCounts=bs=>[4,3,2,1,0].map(lv=>{ const g=bs.filter(b=>b.lv===lv); return g.length?`<span class="mcnt" style="--mc:${MGRAD[lv]}" title="${g.length} ${METAL[lv].n.toLowerCase()}: ${esc(g.map(b=>b.def.name.split(" – ")[0]).join(", "))}">${g.length}</span>`:""; }).join("");
 // the profile's Badges section: every badge held, best first, with how far it is to the next level
 const BREC={one:t=>t==="Season-end No. 1s", clock:t=>t==="Most season-end top-10 finishes", map:t=>t==="Most different tournaments won",
@@ -2343,7 +2352,7 @@ function playerBadgesHTML(A,p){
   const tile=b=>{ const d=b.def, [nm,...rest]=d.name.split(" – "), desc=rest.join(" – "), th=d.th, nx=th.findIndex((t,i)=>i>b.lv&&t!=null);
     const lo=th[b.lv], hi=nx>=0?th[nx]:null, pct=hi?Math.max(4,Math.min(100,Math.round(100*(b.v-lo)/(hi-lo)))):100;
     const rc=BR[b.id];
-    return `<div class="btile" style="--mc:${MGRAD[b.lv]};--mt:${METAL[b.lv].t||METAL[b.lv].c}">
+    return `<div class="btile${b.lv===4?" dia":""}" style="--mc:${MGRAD[b.lv]};--mt:${METAL[b.lv].t||METAL[b.lv].c}">
       <span class="bico"><svg viewBox="0 0 24 24" width="24" height="24" fill="#fff" style="color:#fff" aria-hidden="true">${(k=>RICON[k]||ICON[k])(BWHITE[b.id]||b.id)}</svg></span>
       <span class="bbody"><b>${esc(nm)}</b><span class="blev">${METAL[b.lv].n}</span>
         ${desc?`<small>${esc(desc[0].toUpperCase()+desc.slice(1))}</small>`:""}${b.id==="bridge"?(o=>`<small><b>${o.nd}</b> National Doubles · <b>${o.bb}</b> Barnes Bridge</small>`)(twoEach(p)):""}
@@ -2393,7 +2402,7 @@ function openPlayerBadges(n){ const A=achieveIndex().by[n]; if(!A) return;
 function openBadgeKey(){
   const L=achieveIndex().list, cnt=(id,lv)=>L.filter(a=>a.badges.some(x=>x.id===id&&x.lv===lv)).length;
   const card=b=>{ const [nm,...rest]=b.name.split(" – "), desc=rest.join(" – "), top=[4,3,2,1,0].find(lv=>b.th[lv]!=null);
-    return `<div class="btile bkey" style="--mc:${MGRAD[top]};--mt:${METAL[top].t||METAL[top].c}">
+    return `<div class="btile bkey${top===4?" dia":""}" style="--mc:${MGRAD[top]};--mt:${METAL[top].t||METAL[top].c}">
       <span class="bico"><svg viewBox="0 0 24 24" width="24" height="24" fill="#fff" style="color:#fff" aria-hidden="true">${(k=>RICON[k]||ICON[k])(BWHITE[b.id]||b.id)}</svg></span>
       <span class="bbody"><b>${esc(nm)}</b>${desc?`<small>${esc(desc[0].toUpperCase()+desc.slice(1))}</small>`:""}
         <span class="blad">${b.th.map((t,lv)=>t==null?"":`<span style="--mc:${MGRAD[lv]}" title="${cnt(b.id,lv)} player${cnt(b.id,lv)===1?"":"s"} at ${METAL[lv].n.toLowerCase()}"><i></i>${(b.thl&&b.thl[lv])||t+"+"} <em>${cnt(b.id,lv)}</em></span>`).join("")}</span>
@@ -2403,7 +2412,7 @@ function openBadgeKey(){
   const d=$("#tdlg"); if(d.showModal) d.showModal(); else d.setAttribute("open","");
 }
 // platinum: royal purple with a gold sheen, defined once for every badge
-document.body.insertAdjacentHTML("afterbegin",'<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="platgrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#BFEAFB"/><stop offset=".3" stop-color="#5BB8E0"/><stop offset=".65" stop-color="#1F6FA3"/><stop offset="1" stop-color="#9FDDF5"/></linearGradient></defs></svg>');
+document.body.insertAdjacentHTML("afterbegin",'<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="platgrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".35" stop-color="#BFE8F8"/><stop offset=".6" stop-color="#F6DDF0"/><stop offset="1" stop-color="#8FD3F0"/></linearGradient></defs></svg>');
 const tierBadge=t=>svg(t.icon,t.col,22);
 const badgeIcon=b=>`<span title="${esc(b.name)}" style="margin-left:3px">${svg(b.id,b.col,18)}</span>`;
 const badgeStrip=bs=>{const o=[...bs].sort((x,y)=>y.lv-x.lv), n=6; return o.slice(0,n).map(badgeIcon).join("")+(o.length>n?`<span class="bmore" title="${esc(o.slice(n).map(b=>b.name).join(" · "))}">+${o.length-n}</span>`:"");};
