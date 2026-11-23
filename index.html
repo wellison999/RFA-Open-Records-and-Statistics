@@ -2304,7 +2304,9 @@ function BX(){ if(BX_) return BX_; const V={}, g=p=>V[p]=V[p]||{mwin:0,unstop:0,
   return BX_=V; }
 const bx=(a,k)=>(BX()[a.n]||{})[k]||0;
 // Two codes: national doubles titles in each code (the smaller of National Doubles and Barnes Bridge)
-function twoEach(n){ const X=titleIndex(), nd=(X.by[n]&&X.by[n].ND)||0, bb=(TT().winch||[]).filter(r=>r[1].includes(n)).length; return {nd,bb,e:Math.min(nd,bb)}; }
+function twoEach(n){ const X=titleIndex(), o=X.by[n]||{}, nd=o.ND||0, dd=o.D||0, bb=(TT().winch||[]).filter(r=>r[1].includes(n)).length; return {nd,dd,bb,e:Math.min(nd,bb),de:Math.min(dd,bb)}; }
+// Two codes badge value: from pewter up, National Doubles titles of each code (stored as 100+n); below that, open doubles titles of each code
+function twoVal(n){ const o=twoEach(n); return o.e>=1?100+o.e:o.de; }
 const BADGES=[
   {id:"natS",name:"National Singles champion",unit:"titles",th:[null,1,3,5,10],val:a=>a.c.nsW},
   {id:"natD",name:"National Doubles champion",unit:"titles",th:[null,1,3,5,10],val:a=>a.c.ndW},
@@ -2321,7 +2323,8 @@ const BADGES=[
   {id:"perfect",name:"Perfect season – won every open singles (or doubles) title in one season",unit:"seasons",th:[null,1,2,3,5],val:a=>a.c.psS+a.c.psD},
   {id:"weekend",name:"Weekend double – won the singles and doubles at the same regional open",unit:"times",th:[null,5,10,15,20],val:a=>a.wkDbl||0},
   {id:"partners",name:"Partner-proof – won the National Doubles with more than one partner",unit:"partners",th:[null,2,3,4,5],val:a=>a.natPartners||0},
-  {id:"bridge",name:"Two codes – national doubles champion in both codes: the Rugby Fives National Doubles and the Barnes Bridge (Winchester Fives). Counts the smaller of the two",unit:"of each",keyNote:"Counted in titles of each code; wood needs any open title plus a Barnes Bridge",th:[0,1,3,5,8],thl:["Open title + Barnes Bridge"],val:a=>a.titles>0&&a.winch>0?twoEach(a.n).e:-1},
+  {id:"bridge",name:"Two codes – doubles titles in both codes: the smaller of Rugby Fives doubles titles and Barnes Bridges (Winchester Fives); from pewter up, National Doubles only",unit:"of each",keyNote:"Wood and leather count open doubles titles and Barnes Bridges of each; pewter and above count National Doubles and Barnes Bridges of each",th:[1,2,101,105,108],thl:["1 doubles + 1 BB","2 + 2","1 National + 1 BB","5 + 5 National","8 + 8 National"],disp:v=>v>=100?v-100:v,
+   next:(v,nx)=>nx===2?"Needs a National Doubles title for pewter":null,val:a=>a.titles>0&&a.winch>0?twoVal(a.n):-1},
   // added 22 Nov 2026. Match-based ones count recorded matches only (from 1988/89, with gaps until 2005), so they favour recent players
   {id:"mwin",name:"Match winner – matches won (main draws, recorded results)",unit:"wins",th:[25,100,200,300,450],val:a=>bx(a,"mwin")},
   {id:"unstop",name:"Unstoppable – matches won in a row",unit:"in a row",th:[5,10,20,30,50],val:a=>bx(a,"unstop")},
@@ -2366,10 +2369,10 @@ function playerBadgesHTML(A,p){
     return `<div class="btile${["","lea","pew","sap","dia"][b.lv]?" "+["","lea","pew","sap","dia"][b.lv]:""}" style="--mc:${MGRAD[b.lv]};--mt:${METAL[b.lv].t||METAL[b.lv].c}">
       <span class="bico"><svg viewBox="0 0 24 24" width="24" height="24" fill="#fff" style="color:#fff" aria-hidden="true">${(k=>RICON[k]||ICON[k])(BWHITE[b.id]||b.id)}</svg></span>
       <span class="bbody"><b>${esc(nm)}</b><span class="blev">${METAL[b.lv].n}</span>
-        ${desc?`<small>${esc(desc[0].toUpperCase()+desc.slice(1))}</small>`:""}${b.id==="bridge"?(o=>`<small><b>${o.nd}</b> National Doubles · <b>${o.bb}</b> Barnes Bridge</small>`)(twoEach(p)):""}
-        ${rc?`<button class="brec" style="--medal:${MEDAL[rc.rk-1]}" data-rgo="${rc.tab}|${rc.disc||""}"${rc.go?` data-rev="${esc(rc.go)}"`:""} title="Open the ${esc(rc.title)} board"><i></i>${rc.joint?"Joint ":""}${ORDN[rc.rk-1]} all-time${rc.disc?` in ${rc.disc.toLowerCase()}`:""}${rc.disc&&rc.val&&rc.val!==String(b.v)?` (${esc(rc.val)})`:""}</button>`:""}
-        <span class="bbar"><i style="width:${pct}%"></i></span><small class="bnext">${hi?`${hi-b.v} more for ${METAL[nx].n.toLowerCase()} (${hi})`:"Top level"}</small></span>
-      <span class="rval">${b.v}<small>${esc(unit(d,b.v))}</small></span></div>`; };
+        ${desc?`<small>${esc(desc[0].toUpperCase()+desc.slice(1))}</small>`:""}${b.id==="bridge"?(o=>`<small><b>${o.dd}</b> doubles titles (<b>${o.nd}</b> National) · <b>${o.bb}</b> Barnes Bridge</small>`)(twoEach(p)):""}
+        ${rc?`<button class="brec" style="--medal:${MEDAL[rc.rk-1]}" data-rgo="${rc.tab}|${rc.disc||""}"${rc.go?` data-rev="${esc(rc.go)}"`:""} title="Open the ${esc(rc.title)} board"><i></i>${rc.joint?"Joint ":""}${ORDN[rc.rk-1]} all-time${rc.disc?` in ${rc.disc.toLowerCase()}`:""}${rc.disc&&rc.val&&rc.val!==String(b.def&&b.def.disp?b.def.disp(b.v):b.v)?` (${esc(rc.val)})`:""}</button>`:""}
+        <span class="bbar"><i style="width:${pct}%"></i></span><small class="bnext">${hi?((d.next&&d.next(b.v,nx))||`${hi-b.v} more for ${METAL[nx].n.toLowerCase()} (${d.disp?d.disp(hi):hi})`):"Top level"}</small></span>
+      <span class="rval">${d.disp?d.disp(b.v):b.v}<small>${esc(unit(d,d.disp?d.disp(b.v):b.v))}</small></span></div>`; };
   const cnt=[4,3,2,1,0].map(lv=>[lv,bs.filter(b=>b.lv===lv).length]).filter(x=>x[1]);
   return `<h3 style="margin-top:20px">Badges <span class="muted" style="font-size:.7em;font-weight:500">career, singles and doubles together</span></h3>
     <p class="sub" style="margin-bottom:6px">Badges rise through wood, leather, pewter, sapphire and diamond as the achievement grows. <button class="linkbtn" data-badgekey="1">See all badges</button></p>
