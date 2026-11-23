@@ -290,7 +290,7 @@ th.ch-s{color:var(--singles)}th.ch-d{color:var(--doubles)}
 .msum{display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 6px;border-radius:999px;font-weight:600;font-size:13px;border:1px solid var(--rule)}.msum i{width:14px;height:14px;border-radius:50%;background:var(--mc);display:inline-block}
 .bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(330px,100%),1fr));gap:8px;margin-top:8px}
 .btile{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border:1px solid var(--rule);border-radius:10px;background:var(--panel);position:relative;overflow:hidden;width:100%;color:inherit;font:inherit;text-align:left}
-button.btile{cursor:pointer;transition:transform .15s,box-shadow .15s}button.btile:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.btile[role=button]{cursor:pointer;transition:transform .15s,box-shadow .15s}.btile[role=button]:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.12)}
 .btile .rval{margin-left:auto;padding-left:6px;flex:0 0 auto;max-width:76px;white-space:normal}.btile .rval small{white-space:normal;line-height:1.2}
 .btile .bico{position:relative}.btile .bico .rrk{right:-6px;bottom:-5px}
 .brec{display:inline-flex;align-items:center;gap:5px;margin-top:5px;padding:2px 8px 2px 4px;border-radius:999px;border:1px solid color-mix(in srgb,var(--medal) 55%,transparent);background:color-mix(in srgb,var(--medal) 13%,transparent);color:inherit;font:600 11.5px Barlow,sans-serif;cursor:pointer}
@@ -1157,6 +1157,7 @@ function renderMoves(){
     `<div class="tablewrap" style="max-height:none"><table><thead><tr><th>Update</th><th>Biggest gains from results</th><th>Biggest losses from ageing</th></tr></thead><tbody>${ev.reverse().join("")}</tbody></table></div>`;
   $("#mv-body").innerHTML=m;
 }
+document.addEventListener("keydown",e=>{ const t=e.target; if((e.key==="Enter"||e.key===" ")&&t.getAttribute&&t.getAttribute("role")==="button"&&t.classList.contains("btile")){ e.preventDefault(); t.click(); } });
 document.addEventListener("click",e=>{ const t=e.target.closest&&e.target.closest("[data-mvu]"); if(!t) return; S.mvU=t.dataset.mvu; renderMoves(); writeHash(); });
 document.addEventListener("change",e=>{
   if(e.target.id==="mv-a"||e.target.id==="mv-b"){ let a=+$("#mv-a").value, b=+$("#mv-b").value; if(a>b)[a,b]=[b,a]; if(a===b) a=Math.max(0,b-1); S.mvA=a; S.mvB=b; renderMoves(); writeHash(); }
@@ -2142,10 +2143,10 @@ function playerRecordsHTML(p,mode){
   const C=mode==="career", ALL=playerRecList(p).filter(x=>!BRx.has(x)), L=ALL.filter(x=>C?!x.disc:x.disc===S.disc);
   if(!L.length) return "";
   const ORD=["1st","2nd","3rd"], cnt=[1,2,3].map(k=>L.filter(x=>x.rk===k).length);
-  const tile=x=>`<button class="btile rtl" style="--mc:${MEDAL[x.rk-1]};--mt:${MEDAL[x.rk-1]};--medal:${MEDAL[x.rk-1]}" data-rgo="${x.tab}|${x.disc||""}"${x.go?` data-rev="${esc(x.go)}"`:""} title="Open ${esc(x.lab)}">
+  const tile=x=>`<div role="button" tabindex="0" class="btile rtl" style="--mc:${MEDAL[x.rk-1]};--mt:${MEDAL[x.rk-1]};--medal:${MEDAL[x.rk-1]}" data-rgo="${x.tab}|${x.disc||""}"${x.go?` data-rev="${esc(x.go)}"`:""} title="Open ${esc(x.lab)}">
       <span class="bico"><svg viewBox="0 0 24 24" width="24" height="24" fill="#fff" style="color:#fff" aria-hidden="true">${RICON[recIcon(x)]||ICON[recIcon(x)]}</svg><span class="rrk">${x.joint?"=":""}${x.rk}</span></span>
       <span class="bbody"><b>${esc(x.title)}${x.times>1?` <span class="rtimes">×${x.times}</span>`:""}</b><span class="blev">${x.joint?"Joint ":""}${ORDN[x.rk-1]}</span><small>${[x.partner?"with "+esc(x.partner):"",x.ctx&&x.ctx!==x.partner?esc(x.ctx):"",esc(x.lab)].filter(Boolean).join(" · ")}</small></span>
-      ${x.val?`<span class="rval">${esc(x.val)}${x.vlab?`<small>${esc(x.vlab)}</small>`:""}</span>`:""}</button>`;
+      ${x.val?`<span class="rval">${esc(x.val)}${x.vlab?`<small>${esc(x.vlab)}</small>`:""}</span>`:""}</div>`;
   const block=(A,more)=>{ const SHOW=Math.max(12,A.filter(x=>x.rk===1).length), head=A.slice(0,SHOW), rest=A.slice(SHOW);   // every 1st always shows; others fill up to 12, the rest fold
     return `<div class="bgrid">${head.map(tile).join("")}</div>${rest.length?`<details class="rmore"><summary>${more} (${A.length})</summary><div class="bgrid">${rest.map(tile).join("")}</div></details>`:""}`; };
   const G=L.filter(x=>x.tab!=="tourns"), T=L.filter(x=>x.tab==="tourns");
@@ -2360,11 +2361,11 @@ function playerTiersHTML(p){ const I=achieveIndex(), A=I.by[p]; if(!A) return ""
   const bare=n=>n.replace(/^(Singles|Doubles) /,"");
   const tile=([lab,t,pts,rk,n,T])=>{ const i=T.indexOf(t), up=i>0?T[i-1]:null, hasUp=!!(up&&isFinite(up.min)), lo=t.min||0;
     const pct=hasUp?Math.max(4,Math.min(100,Math.round(100*(pts-lo)/(up.min-lo)))):100;
-    return `<button class="btile" style="--mc:${t.col};--mt:${t.col}" data-tab="achieve" data-acv-go="${lab==="Overall"?"all":lab[0]}" title="Open the ${lab.toLowerCase()} achievements board">
+    return `<div role="button" tabindex="0" class="btile" style="--mc:${t.col};--mt:${t.col}" data-tab="achieve" data-acv-go="${lab==="Overall"?"all":lab[0]}" title="Open the ${lab.toLowerCase()} achievements board">
       <span class="bico"><svg viewBox="0 0 24 24" width="26" height="26" fill="#fff" style="color:#fff" aria-hidden="true">${(k=>ICON[k]||RICON[k])(TWHITE[t.icon]||t.icon)}</svg></span>
       <span class="bbody"><b>${esc(bare(t.name))}</b><span class="blev">${lab}</span><small>#${rk} of ${n}${t.note?` · ${esc(t.note)}`:""}</small>
         <span class="bbar"><i style="width:${pct}%"></i></span><small class="bnext">${hasUp?`${(up.min-pts).toLocaleString()} more for ${esc(bare(up.name))} (${up.min.toLocaleString()})`:"Top title"}</small></span>
-      <span class="rval">${pts.toLocaleString()}<small>points</small></span></button>`; };
+      <span class="rval">${pts.toLocaleString()}<small>points</small></span></div>`; };
   return `<h3 style="margin-top:20px">Achievement titles</h3><div class="bgrid">${rows.map(tile).join("")}</div>`; }
 // jump links at the top of a profile, one per section (the records section fills in later, so it links to its box)
 const PLJ=[[/^Titles/,"Titles"],[/^Form guide/,"Form"],[/^Results timeline/,"Timeline"],[/^Season statistics/,"Stats"],[/^Most-played opponents/,"Opponents"],
@@ -3459,7 +3460,7 @@ document.addEventListener("click",e=>{
   if(tc){e.preventDefault(); const [d,t]=tc.dataset.tourn.split("|"); return openTourn(d,+t,S.tab==="player"?S.player:"");}
   const wd=e.target.closest("[data-wdv]"); if(wd){e.preventDefault(); S.wdv=wd.dataset.wdv; return renderWinch();}
   const wc=e.target.closest("[data-winch]"); if(wc){e.preventDefault(); return openWinch(wc.dataset.winch,S.tab==="player"?S.player:"");}
-  const t=e.target.closest("button,a"); if(!t) return;
+  const t=e.target.closest("button,a,[role=button]"); if(!t) return;
   if(t.dataset.pljump){ e.preventDefault(); const el=document.getElementById(t.dataset.pljump); if(el) el.scrollIntoView({behavior:"smooth",block:"start"}); return; }
   if(t.dataset.badgekey){ openBadgeKey(); return; }
   if(t.dataset.pbadges){ openPlayerBadges(t.dataset.pbadges); return; }
