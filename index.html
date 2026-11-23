@@ -431,7 +431,7 @@ h2{font-size:22px} h3{font-size:16.5px}
 .brk .bcol h4{position:sticky;top:0;z-index:2;background:var(--panel);padding:6px 0 4px}
 .brk .bcol{display:flex;flex-direction:column;min-width:max-content;flex:1 0 150px}   /* never narrower than the longest name: the draw scrolls sideways instead */
 .brk .bcol h4{margin:0 0 6px;font:600 13px Poppins,Barlow,sans-serif;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-.brk .bslots{display:flex;flex-direction:column;flex:1;gap:8px}
+.brk .bslots{display:grid;grid-auto-rows:1fr;flex:1;gap:8px}
 /* each match gets an equal share of the column, so it sits level with the middle of the two matches that feed it;
    rounded "]" brackets join each pair to the next round */
 .brk .bslot{position:relative;flex:1 1 0;display:flex;flex-direction:column;justify-content:center}
