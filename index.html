@@ -2228,7 +2228,7 @@ const ACH_LABEL={nsW:"National Singles titles",nsF:"National Singles finals lost
   nat3:"National title run reaching 3 in a row",nat5:"National title run reaching 5 in a row",nat10:"National title run reaching 10 in a row",nat15:"National title run reaching 15 in a row",
   reg5:"Regional title run reaching 5 in a row (same tournament)",reg10:"Regional run reaching 10 in a row",reg15:"Regional run reaching 15 in a row",reg20:"Regional run reaching 20 in a row",
   dbl:"National Singles and Doubles in the same season",wW:"Barnes Bridge titles (Winchester Fives national doubles)",wF:"Barnes Bridge finals lost"};
-const TIERS=[{name:"GOAT",min:4000,col:"#C0392B",icon:"goat",note:"Greatest of all time"},{name:"Legend",min:2000,col:"#5B3FB5",icon:"gem",note:"A super-exceptional career, short of GOAT"},{name:"All-Time Great",min:1000,col:"#0B6E8A",icon:"titan",note:"Among the very greatest"},{name:"Grandmaster",min:500,col:"#B8860B",icon:"crown"},{name:"Master",min:300,col:"#7A1F5C",icon:"laurel"},
+const TIERS=[{name:"GOAT",min:4000,col:"#C0392B",icon:"goat",note:"Greatest of all time"},{name:"Legend",min:2000,col:"#5B3FB5",icon:"gem",note:"A super-exceptional career, short of GOAT"},{name:"All-Time Great",min:1000,col:"#0B6E8A",icon:"titan",note:"Among the very greatest"},{name:"Grandmaster",min:500,col:"#B8860B",icon:"crown"},{name:"Master",min:250,col:"#7A1F5C",icon:"laurel"},
   {name:"Champion",min:120,col:"#1F4F8A",icon:"trophy"},{name:"Expert",min:60,col:"#2B7A5B",icon:"star"},{name:"Contender",min:25,col:"#8B5A2B",icon:"shield"},
   {name:"Challenger",min:10,col:"#6B7280",icon:"glove"},{name:"Competitor",min:0,col:"#9AA3AD",icon:"ball"}];
 const ICON={
@@ -2439,7 +2439,7 @@ const RUNK=["nat3","nat5","nat10","nat15","reg5","reg10","reg15","reg20"];
 const RN=(a,d)=>{a.rn=a.rn||{S:Object.fromEntries(RUNK.map(k=>[k,0])),D:Object.fromEntries(RUNK.map(k=>[k,0]))}; return a.rn[d];};
 const VKEYS={S:["nsW","nsF","firstNS","rS","y1S","y3S","y10S","swS","psS","eraS"],D:["ndW","ndF","firstND","rD","y1D","y3D","y10D","swD","psD","wW","wF","eraD"]};
 const VNAME={all:"",S:"Singles ",D:"Doubles "};
-const VFIX={S:{goat:2000,gem:1000,titan:450,crown:200,laurel:90,trophy:30,star:10,shield:5,glove:3},D:{goat:2000,gem:1000,titan:500,crown:250,laurel:140,trophy:75,star:40,shield:22,glove:10}};
+const VFIX={S:{goat:2000,gem:1000,titan:500,crown:220,laurel:100,trophy:30,star:10,shield:5,glove:3},D:{goat:2000,gem:1000,titan:500,crown:280,laurel:150,trophy:90,star:50,shield:22,glove:10}};
 function viewCounts(a,v){ if(v==="all") return a.c; const o={}; VKEYS[v].forEach(k=>o[k]=a.c[k]); RUNK.forEach(k=>o[k]=(a.rn?a.rn[v][k]:0)); return o; }
 function achieveIndex(){
   if(AIX) return AIX;
