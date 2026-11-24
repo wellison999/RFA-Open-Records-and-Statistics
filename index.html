@@ -489,6 +489,8 @@ h2{font-size:22px} h3{font-size:16.5px}
 .btile.lea .bico::after{content:"";position:absolute;inset:4px;border:1.5px dashed rgba(245,215,190,.75);border-radius:8px;pointer-events:none}
 .btile.pew .bico{box-shadow:inset 0 0 0 1px rgba(255,255,255,.18),inset 0 -3px 0 rgba(0,0,0,.22)}
 .btile.pew .bico::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(circle at 24% 28%,rgba(255,255,255,.13) 0 3px,transparent 4.5px),radial-gradient(circle at 74% 34%,rgba(255,255,255,.08) 0 4px,transparent 5.5px),radial-gradient(circle at 62% 76%,rgba(255,255,255,.1) 0 3.5px,transparent 5px),radial-gradient(circle at 26% 74%,rgba(0,0,0,.1) 0 3px,transparent 4.5px)}
+.btile.rtl .bico{box-shadow:inset 0 0 0 1px rgba(255,255,255,.25),inset 0 -3px 0 rgba(0,0,0,.18)}
+.btile.rtl .bico svg{filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
 </style>
 </head>
 <body data-disc="Singles">
@@ -1808,7 +1810,9 @@ function evOptions(sel,list,cur){
   sel.innerHTML=`<option value="">All tournaments</option>`+list.map(e=>`<option value="${esc(e)}"${e===cur?" selected":""}>${esc(evL(e))}</option>`).join("");
 }
 const dTag=d=>`<span class="tag ${d==="Singles"?"t-s":"t-d"}">${d}</span>`;
-const MEDAL=["#C9A227","#9AA3AD","#B87333"];
+const MEDAL=["#D4AF37","#9AA3AD","#B87333"];
+// metallic versions for the record tiles' icon squares and edges (flat gold read as brown on dark backgrounds)
+const MEDALG=["linear-gradient(135deg,#FBE38A 0%,#E9BE3A 38%,#C99A1E 70%,#F2D06B 100%)","linear-gradient(135deg,#EEF1F4 0%,#B4BCC5 45%,#8A949F 75%,#D5DBE1 100%)","linear-gradient(135deg,#EDB07E 0%,#C27C42 45%,#94592A 75%,#D99A66 100%)"];
 function shadeRows(rows,pod=true,heat=true){   // colour the first numeric column by its size, and medal the top three
   const nums=rows.map(r=>{const m=/<td class="r">([\d.]+)/.exec(r); return m?+m[1]:null;}), mx=Math.max(1,...nums.filter(v=>v!=null));
   return rows.map((r,i)=>{ let out=r;
@@ -2165,7 +2169,7 @@ function playerRecordsHTML(p,mode){
   const C=mode==="career", ALL=playerRecList(p).filter(x=>!BRx.has(x)), L=ALL.filter(x=>C?!x.disc:x.disc===S.disc);
   if(!L.length) return "";
   const ORD=["1st","2nd","3rd"], cnt=[1,2,3].map(k=>L.filter(x=>x.rk===k).length);
-  const tile=x=>`<div role="button" tabindex="0" class="btile rtl" style="--mc:${MEDAL[x.rk-1]};--mt:${MEDAL[x.rk-1]};--medal:${MEDAL[x.rk-1]}" data-rgo="${x.tab}|${x.disc||""}"${x.go?` data-rev="${esc(x.go)}"`:""} title="Open ${esc(x.lab)}">
+  const tile=x=>`<div role="button" tabindex="0" class="btile rtl" style="--mc:${MEDALG[x.rk-1]};--mt:${MEDAL[x.rk-1]};--medal:${MEDAL[x.rk-1]}" data-rgo="${x.tab}|${x.disc||""}"${x.go?` data-rev="${esc(x.go)}"`:""} title="Open ${esc(x.lab)}">
       <span class="bico"><svg viewBox="0 0 24 24" width="24" height="24" fill="#fff" style="color:#fff" aria-hidden="true">${RICON[recIcon(x)]||ICON[recIcon(x)]}</svg><span class="rrk">${x.joint?"=":""}${x.rk}</span></span>
       <span class="bbody"><b>${esc(x.title)}${x.times>1?` <span class="rtimes">×${x.times}</span>`:""}</b><span class="blev">${x.joint?"Joint ":""}${ORDN[x.rk-1]}</span><small>${[x.partner?"with "+esc(x.partner):"",x.ctx&&x.ctx!==x.partner?esc(x.ctx):"",esc(x.lab)].filter(Boolean).join(" · ")}</small></span>
       ${x.val?`<span class="rval">${esc(x.val)}${x.vlab?`<small>${esc(x.vlab)}</small>`:""}</span>`:""}</div>`;
