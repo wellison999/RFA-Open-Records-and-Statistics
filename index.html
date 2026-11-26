@@ -491,6 +491,9 @@ h2{font-size:22px} h3{font-size:16.5px}
 .btile.pew .bico::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(circle at 24% 28%,rgba(255,255,255,.13) 0 3px,transparent 4.5px),radial-gradient(circle at 74% 34%,rgba(255,255,255,.08) 0 4px,transparent 5.5px),radial-gradient(circle at 62% 76%,rgba(255,255,255,.1) 0 3.5px,transparent 5px),radial-gradient(circle at 26% 74%,rgba(0,0,0,.1) 0 3px,transparent 4.5px)}
 .btile.rtl .bico{box-shadow:inset 0 0 0 1px rgba(255,255,255,.25),inset 0 -3px 0 rgba(0,0,0,.18)}
 .btile.rtl .bico svg{filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
+.rdisc{display:inline-block;font:600 10.5px Barlow,sans-serif;text-transform:uppercase;letter-spacing:.04em;padding:0 5px;border-radius:4px;margin-right:6px;vertical-align:1px;color:#fff;background:#6B7280}.rdisc.singles{background:var(--singles)}.rdisc.doubles{background:var(--doubles)}
+:root[data-theme="dark"] .rdisc.singles,:root[data-theme="dark"] .rdisc.doubles{color:#111}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .rdisc.singles,:root:not([data-theme="light"]) .rdisc.doubles{color:#111}}
 </style>
 </head>
 <body data-disc="Singles">
@@ -1307,12 +1310,11 @@ function renderPlayer(){
   }
   html+=oppHTML(p);
   html+=`<h3 style="margin-top:26px">Ranking history</h3><div class="chartbox" style="height:300px"><canvas id="pl-chart"></canvas></div>`;
-  html+=`<div id="pl-recs"></div>`;
   html+=`<h3 style="margin-top:26px">Results</h3><div class="tablewrap"><table><thead><tr><th>Tournament</th><th>Round</th>${S.disc==="Doubles"?"<th>Partner</th>":""}<th>Opponent</th><th>Score</th><th>Result</th></tr></thead><tbody>`+
    mids.slice().reverse().map(i=>matchRow(D().matches[i],p)).join("")+`</tbody></table></div>`;
   body.innerHTML=html;
   plJump(body);
-  { const rb=$("#pl-recs"); if(rb){ const fill=()=>{ recordIndex(); const el=$("#pl-recs"), cr=$("#pl-crecs"), bd=$("#pl-badges"); if(bd) bd.innerHTML=playerBadgesHTML(achieveIndex().by[p],p); if(cr) cr.innerHTML=playerRecordsHTML(p,"career"); if(el) el.innerHTML=playerRecordsHTML(p,"disc"); };
+  { const rb=$("#pl-crecs"); if(rb){ const fill=()=>{ recordIndex(); const cr=$("#pl-crecs"), bd=$("#pl-badges"); if(bd) bd.innerHTML=playerBadgesHTML(achieveIndex().by[p],p); if(cr) cr.innerHTML=playerRecordsHTML(p); };
       if(REC_IX) fill();
       else { const cr=$("#pl-crecs"); if(cr) cr.innerHTML=`<p class="muted" style="margin-top:20px;font-size:13px">Gathering records…</p>`; setTimeout(()=>{ if(S.player!==p||S.tab!=="player") return; fill(); },60); } } }
   const snaps=D().snapshots, xs=snaps.map(s=>snapX(S.disc,s));
@@ -2163,27 +2165,30 @@ const RICON_RULES=[[/two-code/,"bridge"],[/plate/,"plate"],[/clean sweep/,"broom
   [/quickest|career|ever-present|decade|marathon/,"clock"],[/in one season|in a season|this season/,"calendar"],[/final/,"medal"],[/title|wins of/,"trophy"],[/match/,"glove"]];
 const recIcon=x=>{ if(x.lab==="Barnes Bridge") return "bridge"; if(x.lab==="Elo honours") return /top 3/i.test(x.title)?"podium":/top of/i.test(x.title)?"one":"bolt";
   const t=x.title.toLowerCase(); const r=RICON_RULES.find(([rx])=>rx.test(t)); return r?r[1]:"trophy"; };
-function playerRecordsHTML(p,mode){
+function playerRecordsHTML(p){
   const BRx=new Set(Object.values(badgeRecords(p,achieveIndex().by[p])));
-  { const A0=achieveIndex().by[p]; if(A0&&A0.badges.some(b=>b.id==="bridge")) playerRecList(p).filter(x=>x.title==="Two-code champions").forEach(x=>BRx.add(x)); }   // both Two-code boards (Title records and Barnes Bridge) are covered by the badge   // shown on a badge instead
-  const C=mode==="career", ALL=playerRecList(p).filter(x=>!BRx.has(x)), L=ALL.filter(x=>C?!x.disc:x.disc===S.disc);
-  if(!L.length) return "";
+  { const A0=achieveIndex().by[p]; if(A0&&A0.badges.some(b=>b.id==="bridge")) playerRecList(p).filter(x=>x.title==="Two-code champions").forEach(x=>BRx.add(x)); }   // both Two-code boards are covered by the Two codes badge
+  const ALL=playerRecList(p).filter(x=>!BRx.has(x));
+  if(!ALL.length) return "";
+  const F=[["all","All"],["comb","Combined"],["Singles","Singles"],["Doubles","Doubles"]].filter(([k])=>k==="all"||ALL.some(x=>k==="comb"?!x.disc:x.disc===k));
+  if(!F.some(([k])=>k===S.recf)) S.recf="all";
+  const L=ALL.filter(x=>S.recf==="all"||(S.recf==="comb"?!x.disc:x.disc===S.recf));
   const ORD=["1st","2nd","3rd"], cnt=[1,2,3].map(k=>L.filter(x=>x.rk===k).length);
+  const dtag=x=>`<span class="rdisc ${x.disc?x.disc.toLowerCase():"comb"}">${x.disc||"Combined"}</span>`;
   const tile=x=>`<div role="button" tabindex="0" class="btile rtl" style="--mc:${MEDALG[x.rk-1]};--mt:${MEDAL[x.rk-1]};--medal:${MEDAL[x.rk-1]}" data-rgo="${x.tab}|${x.disc||""}"${x.go?` data-rev="${esc(x.go)}"`:""} title="Open ${esc(x.lab)}">
       <span class="bico"><svg viewBox="0 0 24 24" width="24" height="24" fill="#fff" style="color:#fff" aria-hidden="true">${RICON[recIcon(x)]||ICON[recIcon(x)]}</svg><span class="rrk">${x.joint?"=":""}${x.rk}</span></span>
-      <span class="bbody"><b>${esc(x.title)}${x.times>1?` <span class="rtimes">×${x.times}</span>`:""}</b><span class="blev">${x.joint?"Joint ":""}${ORDN[x.rk-1]}</span><small>${[x.partner?"with "+esc(x.partner):"",x.ctx&&x.ctx!==x.partner?esc(x.ctx):"",esc(x.lab)].filter(Boolean).join(" · ")}</small></span>
+      <span class="bbody"><b>${esc(x.title)}${x.times>1?` <span class="rtimes">×${x.times}</span>`:""}</b><span class="blev">${x.joint?"Joint ":""}${ORDN[x.rk-1]}</span><small>${dtag(x)}${[x.partner?"with "+esc(x.partner):"",x.ctx&&x.ctx!==x.partner?esc(x.ctx):"",esc(x.lab)].filter(Boolean).join(" · ")}</small></span>
       ${x.val?`<span class="rval">${esc(x.val)}${x.vlab?`<small>${esc(x.vlab)}</small>`:""}</span>`:""}</div>`;
   const block=(A,more)=>{ const SHOW=Math.max(12,A.filter(x=>x.rk===1).length), head=A.slice(0,SHOW), rest=A.slice(SHOW);   // every 1st always shows; others fill up to 12, the rest fold
     return `<div class="bgrid">${head.map(tile).join("")}</div>${rest.length?`<details class="rmore"><summary>${more} (${A.length})</summary><div class="bgrid">${rest.map(tile).join("")}</div></details>`:""}`; };
   const G=L.filter(x=>x.tab!=="tourns"), T=L.filter(x=>x.tab==="tourns");
-  return `<h3 style="margin-top:20px">${C?"Career records":`${S.disc} records`}</h3>
-    <p class="sub" style="margin-bottom:6px">${C?"Top-three places on record boards that count singles and doubles together":`Top-three places on the ${S.disc.toLowerCase()} record boards`}, other than those shown on a badge (= tied; ×2 = holds two of the top places). Click one to open its board.${C?(()=>{ const nS=ALL.filter(x=>x.disc==="Singles").length, nD=ALL.filter(x=>x.disc==="Doubles").length; const parts=[nS?`${nS} singles`:"",nD?`${nD} doubles`:""].filter(Boolean); return parts.length?` Singles-only and doubles-only records (${parts.join(", ")}) are shown separately <a href="#" class="lnk" onclick="var d=document.getElementById('pl-recs');if(d)d.scrollIntoView({behavior:'smooth'});return false">further down</a>, under the singles/doubles switch.`:""; })():(ALL.some(x=>!x.disc)?` Records that count singles and doubles together are <a href="#" class="lnk" onclick="var d=document.getElementById('pl-crecs');if(d)d.scrollIntoView({behavior:'smooth'});return false">under Career records</a>.`:"")}</p>
+  return `<h3 style="margin-top:20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">Records${F.length>2?`<span class="pldsw" role="group" aria-label="Records shown">${F.map(([k,l])=>`<button data-recf="${k}" aria-pressed="${k===S.recf}">${l}</button>`).join("")}</span>`:""}</h3>
+    <p class="sub" style="margin-bottom:6px">Top-three places on the record boards (singles, doubles and boards that count both together), other than those shown on a badge (= tied; ×2 = holds two of the top places). Click one to open its board.</p>
     <div class="rsum">${cnt.map((c,i)=>c?`<span style="--medal:${MEDAL[i]}"><i></i>${c} × ${ORD[i]}</span>`:"").join("")}</div>
     ${G.length?block(G,"Show all"):""}
     ${T.length?`<h4 class="rsubh">At individual tournaments</h4>${block(T,"Show all tournament records")}`:""}`;
 }
 
-/* ---------------- plates ---------------- */
 function renderPlates(){
   const P=TT().plates;
   document.querySelectorAll("[data-psub]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.psub===S.psub));
@@ -3492,6 +3497,7 @@ document.addEventListener("click",e=>{
   const wd=e.target.closest("[data-wdv]"); if(wd){e.preventDefault(); S.wdv=wd.dataset.wdv; return renderWinch();}
   const wc=e.target.closest("[data-winch]"); if(wc){e.preventDefault(); return openWinch(wc.dataset.winch,S.tab==="player"?S.player:"");}
   const t=e.target.closest("button,a,[role=button]"); if(!t) return;
+  if(t.dataset.recf){ S.recf=t.dataset.recf; const cr=$("#pl-crecs"); if(cr&&S.player) cr.innerHTML=playerRecordsHTML(S.player); return; }
   if(t.dataset.pljump){ e.preventDefault(); const el=document.getElementById(t.dataset.pljump); if(el) el.scrollIntoView({behavior:"smooth",block:"start"}); return; }
   if(t.dataset.badgekey){ openBadgeKey(); return; }
   if(t.dataset.pbadges){ openPlayerBadges(t.dataset.pbadges); return; }
